@@ -15,6 +15,11 @@ classdef SteadyStateTrack < handle
     end
     
     
+    properties (Dependent)
+        nCorners
+        nStraights
+    end
+    
     %% Constructor
     methods
         function obj = SteadyStateTrack(cornerRadii, cornerAngles, straightLengths, args)
@@ -41,8 +46,8 @@ classdef SteadyStateTrack < handle
     %% Private implementation
     methods (Access = private)
         function discretiseTrack(this)
-            nCorners = numel(this.corners);
-            nStraights = numel(this.straightLengths);
+            nCorners = this.nCorners;
+            nStraights = this.nStraights;
             
             sLap = 0;
             radius = Inf; %#ok<*PROP>
@@ -70,6 +75,18 @@ classdef SteadyStateTrack < handle
             this.distanceAlongLap = sLap;
             this.radius = radius;
             this.isCorner = isCorner;
+        end
+    end
+    
+    %% Getter
+    methods
+        function out = get.nCorners(this)
+            out = numel(this.corners);
+        end
+        
+        
+        function out = get.nStraights(this)
+            out = numel(this.straightLengths);
         end
     end
 end

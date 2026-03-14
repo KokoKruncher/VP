@@ -31,5 +31,26 @@ Length_straight     = [742 405 368 53];     % Length of each straight [m]
 %Simulation parameters
 Delta_S             = 0.1;   % Calculation step size interval [m]
 
-%% Process
-track = SteadyStateTrack(Radius_corner, deg2rad(Angle_corner), Length_straight, DistanceStep=Delta_S);
+%% Parsing inputs
+% All calculations are done in SI units! Need to convert all parameters to SI.
+track = SteadyStateTrack(Radius_corner, deg2rad(Angle_corner), Length_straight);
+
+vehicle = Vehicle();
+vehicle.mass = m;
+vehicle.weightDistribution = D_weight;
+vehicle.wheelbase = L ./  1000;
+vehicle.cogHeight = h_cog ./ 1000;
+vehicle.rearTyreRollingRadius = R_tyre ./ 1000;
+vehicle.muLongitudinal = mu_lon;
+vehicle.muLateral = mu_lat;
+vehicle.aeroBalance = D_aero;
+vehicle.dragFactor = CdA;
+vehicle.downforceFactor = ClA;
+vehicle.finalDriveRatio = FDR;
+vehicle.gearRatio = GR;
+vehicle.drivelineEfficiency = eta;
+vehicle.motorTorqueLookup_Revs = Motor_torque_lookup(1,:) ./ 60;
+vehicle.motorTorqueLookup_Torque = Motor_torque_lookup(2,:);
+
+steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
+steadyStateSim.run();
