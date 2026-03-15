@@ -9,15 +9,15 @@ classdef SteadyStateTrack < handle
         straightLengths (:,1) double
         distanceStep (1,1) double = nan
         
-        distanceAlongLap (:,1) double
-        radius (:,1) double
+        sLap (:,1) double
+        radiusCorner (:,1) double
         isCorner (:,1) logical
     end
     
     
     properties (Dependent)
-        nCorners
-        nStraights
+        cornerCount
+        straightCount
     end
     
     %% Constructor
@@ -46,8 +46,8 @@ classdef SteadyStateTrack < handle
     %% Private implementation
     methods (Access = private)
         function discretiseTrack(this)
-            nCorners = this.nCorners;
-            nStraights = this.nStraights;
+            cornerCount = this.cornerCount;
+            straightCount = this.straightCount;
             
             sLap = 0;
             radius = Inf; %#ok<*PROP>
@@ -55,14 +55,14 @@ classdef SteadyStateTrack < handle
             ii = 0;
             while true
                 ii = ii + 1;
-                if ii > nStraights
+                if ii > straightCount
                     break
                 end
                 
                 previousDistance =  sLap(end);
                 straightSegment = 0: this.distanceStep : this.straightLengths(ii);
                 straightSegment = straightSegment + previousDistance + this.distanceStep;
-                if ii <= nCorners
+                if ii <= cornerCount
                     cornerSegment = 0 : this.distanceStep : this.corners(ii).distance;
                     cornerSegment = cornerSegment + straightSegment(end) + this.distanceStep;
                 else
@@ -72,20 +72,20 @@ classdef SteadyStateTrack < handle
                 radius = [radius, Inf(size(straightSegment)), repmat(this.corners(ii).radius, size(cornerSegment))];
                 isCorner = [isCorner, false(size(straightSegment)), true(size(cornerSegment))];
             end
-            this.distanceAlongLap = sLap;
-            this.radius = radius;
+            this.sLap = sLap;
+            this.radiusCorner = radius;
             this.isCorner = isCorner;
         end
     end
     
     %% Getter
     methods
-        function out = get.nCorners(this)
+        function out = get.cornerCount(this)
             out = numel(this.corners);
         end
         
         
-        function out = get.nStraights(this)
+        function out = get.straightCount(this)
             out = numel(this.straightLengths);
         end
     end

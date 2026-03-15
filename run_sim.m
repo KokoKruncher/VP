@@ -36,21 +36,22 @@ Delta_S             = 0.1;   % Calculation step size interval [m]
 track = SteadyStateTrack(Radius_corner, deg2rad(Angle_corner), Length_straight);
 
 vehicle = Vehicle();
-vehicle.mass = m;
-vehicle.weightDistribution = D_weight;
-vehicle.wheelbase = L ./  1000;
-vehicle.cogHeight = h_cog ./ 1000;
-vehicle.rearTyreRollingRadius = R_tyre ./ 1000;
-vehicle.muLongitudinal = mu_lon;
-vehicle.muLateral = mu_lat;
-vehicle.aeroBalance = D_aero;
-vehicle.dragFactor = CdA;
-vehicle.downforceFactor = ClA;
-vehicle.finalDriveRatio = FDR;
-vehicle.gearRatio = GR;
-vehicle.drivelineEfficiency = eta;
-vehicle.motorTorqueLookup_Revs = Motor_torque_lookup(1,:) ./ 60;
-vehicle.motorTorqueLookup_Torque = Motor_torque_lookup(2,:);
+vehicle.mCarTotal               = m;
+vehicle.rWeightBalF             = D_weight;
+vehicle.wheelbase               = L ./  1000;
+vehicle.hCoG                    = h_cog ./ 1000;
+vehicle.radiusTyreRollingRear   = R_tyre ./ 1000;
+vehicle.muTyreLong              = mu_lon;
+vehicle.muTyreLat               = mu_lat;
+vehicle.rAeroBalF               = D_aero;
+vehicle.aeroDragFactor          = CdA;
+vehicle.aeroDownforceFactor     = ClA;
+vehicle.rFinalDrive             = FDR;
+vehicle.rTransmissionRatio      = GR;
+vehicle.eTransmission           = eta;
+vehicle.nMotorMapLookup         = Motor_torque_lookup(1,:) ./ 60;
+vehicle.MMotorMapLookup         = Motor_torque_lookup(2,:);
 
 steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
 steadyStateSim.run();
+

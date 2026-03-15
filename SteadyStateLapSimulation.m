@@ -35,8 +35,8 @@ classdef SteadyStateLapSimulation < handle
         function runSingleLap(this, initialSpeed)
             % Calculate maximum corner speed.
             cornerRadii = [this.track.corners.radius];
-            nCorners = numel(cornerRadii);
-            nStraights = this.track.nStraights;
+            cornerCount = numel(cornerRadii);
+            straightCount = this.track.straightCount;
             cornerSpeeds = this.vehicle.calculateMaxSteadyCornerSpeed(cornerRadii);
             iSegment = 0;
             while true

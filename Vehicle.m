@@ -1,21 +1,21 @@
 classdef Vehicle < handle
     % Defines the parameters needed for the vehicle.
     properties
-        mass                            double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        weightDistribution              double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        wheelbase                       double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        cogHeight                       double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        rearTyreRollingRadius           double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        muLongitudinal                  double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        muLateral                       double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        aeroBalance                     double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        dragFactor                      double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        downforceFactor                 double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        finalDriveRatio                 double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        gearRatio                       double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        drivelineEfficiency             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        motorTorqueLookup_RevsPerSecond (:,1) double
-        motorTorqueLookup_Torque        (:,1) double
+        mCarTotal               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        rWeightBalF             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        wheelbase               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        hCoG                    double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        radiusTyreRollingRear   double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        muTyreLong              double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        muTyreLat               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        rAeroBalF               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        aeroDragFactor          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        aeroDownforceFactor     double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        rFinalDrive             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        rTransmissionRatio      double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        eTransmission           double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        nMotorMapLookup         (:,1) double
+        MMotorMapLookup         (:,1) double
     end
 
     % Pre-calculated values
@@ -23,7 +23,7 @@ classdef Vehicle < handle
         weight double {mustBeScalarOrEmpty}
         staticWeightFrontAxle double {mustBeScalarOrEmpty}
         staticWeightRearAxle double {mustBeScalarOrEmpty}
-        motorRevsPerSecondToTorque {mustBeA(motorRevsPerSecondToTorque, 'griddedInterpolant')}
+        nMotorToMMotor {mustBeA(nMotorToMMotor, 'griddedInterpolant')}
         totalGearRatio double {mustBeScalarOrEmpty}
     end
 
@@ -34,13 +34,13 @@ classdef Vehicle < handle
 
             % Pre-calculated values
             g = 9.81;
-            this.weight = this.mass .* g;
-            this.staticWeightFrontAxle = this.weightDistribution .* this.weight;
-            this.staticWeightRearAxle = (1 - this.weightDistribution) .* this.weight;
-            this.motorRevsPerSecondToTorque ...
-                = griddedInterpolant(this.motorTorqueLookup_RevsPerSecond, this.motorTorqueLookup_Torque, ...
+            this.weight = this.mCarTotal .* g;
+            this.staticWeightFrontAxle = this.rWeightBalF .* this.weight;
+            this.staticWeightRearAxle = (1 - this.rWeightBalF) .* this.weight;
+            this.nMotorToMMotor ...
+                = griddedInterpolant(this.nMotorMapLookup, this.MMotorMapLookup, ...
                 "linear", "none");
-            this.totalGearRatio = this.gearRatio .* this.finalDriveRatio;
+            this.totalGearRatio = this.rTransmissionRatio .* this.rFinalDrive;
         end
 
 
@@ -69,7 +69,7 @@ classdef Vehicle < handle
         end
 
 
-        function vMax = calculateMaxSteadyCornerSpeed(this, cornerRadius)
+        function vCarMax = calculateMaxSteadyCornerSpeed(this, cornerRadius)
             arguments
                 this Vehicle
                 cornerRadius double
@@ -79,37 +79,37 @@ classdef Vehicle < handle
             % never considered for the calculation of max gLat.
             % For now, we do not consider yaw moment balance.
             g = 9.81;
-            vMax = sqrt( (this.muLateral .* cornerRadius .* this.mass .* g) ...
-                ./ (this.mass - this.muLateral .* cornerRadius .* this.downforceFactor) );
+            vCarMax = sqrt( (this.muTyreLat .* cornerRadius .* this.mCarTotal .* g) ...
+                ./ (this.mCarTotal - this.muTyreLat .* cornerRadius .* this.aeroDownforceFactor) );
         end
 
 
-        function axMax = calculateSteadyTractionLimitedAcceleration(this, speed, currentLongitudinalAcceleration)
-            downforce = this.downforceFactor .* (speed .^ 2);
-            drag = this.dragFactor .* (speed .^ 2);
-            frontDownforce = this.aeroBalance .* downforce;
-            rearDownforce = this.aeroBalance .* downforce;
-            frontAccelVerticalLoadNoAccel = this.staticWeightFrontAxle + frontDownforce;
-            rearAccelVerticalLoadNoAccel = this.staticWeightRearAxle + rearDownforce;
-            longitudinalLoadTransfer = this.mass .* currentLongitudinalAcceleration .* this.cogHeight ./ this.wheelbase;
+        function gLongMax = calculateSteadygLongTractionLimited(this, vCar, gLongCurrent)
+            downforce = this.aeroDownforceFactor .* (vCar .^ 2);
+            drag = this.aeroDragFactor .* (vCar .^ 2);
+            FLiftF = this.rAeroBalF .* downforce;
+            FLiftR = this.rAeroBalF .* downforce;
+            FzFrontNoAccel = this.staticWeightFrontAxle + FLiftF;
+            FzRearNoAccel = this.staticWeightRearAxle + FLiftR;
+            loadTransferLong = this.mCarTotal .* gLongCurrent .* this.hCoG ./ this.wheelbase;
 
             % Prevent wheelies
-            isLiftingFrontAxle = longitudinalLoadTransfer > frontAccelVerticalLoadNoAccel;
-            longitudinalLoadTransfer(isLiftingFrontAxle) = frontAccelVerticalLoadNoAccel;
+            isLiftingFrontAxle = loadTransferLong > FzFrontNoAccel;
+            loadTransferLong(isLiftingFrontAxle) = FzFrontNoAccel;
 
-            rearAccelVerticalLoad = rearAccelVerticalLoadNoAccel + longitudinalLoadTransfer;
-            axMax = (this.muLongitudinal .* rearAccelVerticalLoad - drag) ./ this.mass;
+            FzRear = FzRearNoAccel + loadTransferLong;
+            gLongMax = (this.muTyreLong .* FzRear - drag) ./ this.mCarTotal;
         end
 
 
-        function axMax = calculateSteadyPowerLimitedAcceleration(this, speed)
-            wheelSpeed = speed ./ this.rearTyreRollingRadius;
-            motorSpeed = wheelSpeed .* this.totalGearRatio;
-            motorMaxTorque = this.motorRevsPerSecondToTorque(motorSpeed);
-            wheelMaxTorque = motorMaxTorque .* this.totalGearRatio;
-            maxTractionForce = wheelMaxTorque ./ this.rearTyreRollingRadius;
-            drag = this.dragFactor .* (speed .^ 2);
-            axMax = (maxTractionForce - drag) ./ this.mass;
+        function gLongMax = calculateSteadygLongPowerLimited(this, vCar)
+            nWheelRear = vCar ./ this.radiusTyreRollingRear;
+            nMotor = nWheelRear .* this.totalGearRatio;
+            MMotorMax = this.nMotorToMMotor(nMotor);
+            MWheelMax = MMotorMax .* this.totalGearRatio;
+            FAxleRearMax = MWheelMax ./ this.radiusTyreRollingRear;
+            FDrag = this.aeroDragFactor .* (vCar .^ 2);
+            gLongMax = (FAxleRearMax - FDrag) ./ this.mCarTotal;
         end
     end
 end
