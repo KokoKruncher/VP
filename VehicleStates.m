@@ -1,4 +1,4 @@
-classdef VehicleStates < handle
+classdef VehicleStates < matlab.mixin.Copyable
     properties (Constant)
         loggedStates string = [
             "sRun";
@@ -51,8 +51,40 @@ classdef VehicleStates < handle
             valueCount = numel(value);
             indexCount = numel(index);
             assert(valueCount == indexCount, "Number of logged values and number of indices must match.");
-            assert(this.loggableStateKeys.isKey(param), "Paramater: '%s' is not a valid/loggable parameter.", param);
+            assert(this.loggableStateKeys.isKey(param), ...
+                "Paramater: '%s' is not a valid/loggable parameter. " + ...
+                "Please add it to VehicleStates.loggedStates to make it loggable.", param);
+            
             this.results.(param)(index) = value;
+        end
+        
+        
+        function varargout = crop(this, args)
+            arguments
+                this (1,1) VehicleStates
+                args.StartIndex double {mustBeInteger}
+                args.EndIndex double {mustBeScalarOrEmpty, mustBeInteger} = this.stepCount
+            end
+            assert(args.StartIndex >= 1, "Start index cannot be less than 1.");
+            assert(args.StartIndex <= this.stepCount, "Start index cannot be more than the number of steps.");
+            assert(args.EndIndex <= this.stepCount, "End index cannot be more than the number of steps.");
+            assert(args.StartIndex <= args.EndIndex, "Start index cannot be more than the end index.");
+            
+            this.results = this.results(args.StartIndex:args.EndIndex, :);
+            this.stepCount = height(this.results);
+            if nargout > 0
+                varargout{1} = this;
+            end
+        end
+        
+        
+        function append(this, otherState)
+            arguments
+                this (1,1) VehicleStates
+                otherState (1,1) VehicleStates
+            end
+            this.results = [this.results; otherState.results];
+            this.stepCount = height(this.results);
         end
     end
     
