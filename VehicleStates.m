@@ -9,17 +9,19 @@ classdef VehicleStates < matlab.mixin.Copyable
             "gLongTractionLimited";
             "gLongPowerLimited";
             "MMotor";
+            "FzFront";
             "FzRear"
-            "FLift";
+            "FLiftF";
+            "FLiftR";
             "FDrag"]
     end
-    
-    
+
+
     properties (SetAccess = private)
         results table
     end
-    
-    
+
+
     properties (Access = private)
         stepCount
         loggableStateKeys dictionary
@@ -38,15 +40,15 @@ classdef VehicleStates < matlab.mixin.Copyable
             obj.initialiseResultsTable(sRun);
         end
     end
-    
+
     %% Public interface
     methods
         function log(this, param, value, index)
             arguments
-                this 
-                param (1,1) string 
-                value double
-                index double
+                this (1,1) VehicleStates
+                param (1,1) string
+                value (:,1) double
+                index (:,1) double
             end
             valueCount = numel(value);
             indexCount = numel(index);
@@ -54,11 +56,25 @@ classdef VehicleStates < matlab.mixin.Copyable
             assert(this.loggableStateKeys.isKey(param), ...
                 "Paramater: '%s' is not a valid/loggable parameter. " + ...
                 "Please add it to VehicleStates.loggedStates to make it loggable.", param);
-            
+
             this.results.(param)(index) = value;
         end
-        
-        
+
+
+        function logConstant(this, param, value)
+            arguments
+                this (1,1) VehicleStates
+                param (1,1) string
+                value (1,1) double
+            end
+            assert(this.loggableStateKeys.isKey(param), ...
+                "Paramater: '%s' is not a valid/loggable parameter. " + ...
+                "Please add it to VehicleStates.loggedStates to make it loggable.", param);
+            
+            this.results.(param)(:) = value;
+        end
+
+
         function varargout = crop(this, args)
             arguments
                 this (1,1) VehicleStates
@@ -69,15 +85,15 @@ classdef VehicleStates < matlab.mixin.Copyable
             assert(args.StartIndex <= this.stepCount, "Start index cannot be more than the number of steps.");
             assert(args.EndIndex <= this.stepCount, "End index cannot be more than the number of steps.");
             assert(args.StartIndex <= args.EndIndex, "Start index cannot be more than the end index.");
-            
+
             this.results = this.results(args.StartIndex:args.EndIndex, :);
             this.stepCount = height(this.results);
             if nargout > 0
                 varargout{1} = this;
             end
         end
-        
-        
+
+
         function append(this, otherState)
             arguments
                 this (1,1) VehicleStates
@@ -87,7 +103,7 @@ classdef VehicleStates < matlab.mixin.Copyable
             this.stepCount = height(this.results);
         end
     end
-    
+
     %% Private implementation
     methods (Access = private)
         function initialiseResultsTable(this, sRun)
@@ -96,7 +112,7 @@ classdef VehicleStates < matlab.mixin.Copyable
             variableCount = numel(variables);
             tbl = array2table(nan(this.stepCount, variableCount), VariableNames=variables);
             tbl.sRun = sRun;
-            
+
             this.results = tbl;
         end
     end
