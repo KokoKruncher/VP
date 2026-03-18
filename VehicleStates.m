@@ -112,7 +112,8 @@ classdef VehicleStates < matlab.mixin.Copyable
             else
                 this.results = otherState.results;
             end
-            
+            % Recalculate tRun
+            this.results.tRun = cumtrapz(this.results.sRun, 1 ./ this.results.vCar);
             this.stepCount = height(this.results);
             
             if nargout > 0

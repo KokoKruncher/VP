@@ -52,6 +52,40 @@ vehicle.eTransmission           = eta;
 vehicle.nMotorMapLookup         = Motor_torque_lookup(1,:) .* 2 .* pi ./ 60; % rpm to rad/s
 vehicle.MMotorMapLookup         = Motor_torque_lookup(2,:);
 
+%% Run the lap
 steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
-states = steadyStateSim.run();
+lap = steadyStateSim.run();
 
+%% Plot results
+plotResults(lap);
+
+%% Functions
+
+function varargout = plotResults(lap)
+arguments
+    lap (1,1) VehicleStates
+end
+PARAMETERS = ["vCar", "gLong", "gLat"];
+CONVERSION_FACTORS = [3.6, 1/9.81, 1/9.81];
+UNITS = ["kph", "g", "g"];
+
+parameterCount = numel(PARAMETERS);
+hFig = figure(Visible="off");
+hTiles = tiledlayout(hFig, parameterCount, 1);
+for ii = 1:parameterCount
+    hAxes = nexttile(hTiles);
+    y = lap.results.(PARAMETERS(ii)) .* CONVERSION_FACTORS(ii);
+    rangeY = range(y);
+    plot(hAxes, lap.results.sRun, y, LineWidth=2);
+    grid(hAxes, "on");
+    xlabel(hAxes, "sRun (m)");
+    ylabel(hAxes, sprintf("%s (%s)", PARAMETERS(ii), UNITS(ii)));
+    ylim(hAxes, [min(y) - 0.1 * rangeY, max(y) + 0.1 * rangeY]);
+end
+title(hTiles, sprintf("Lap time = %.3fs", lap.results.tRun(end)));
+hFig.Visible = "on";
+
+if nargout > 1
+    varargout{1} = hFig;
+end
+end

@@ -23,7 +23,6 @@ classdef SteadyStateLapSimulation < handle
     %% Public interface
     methods
         function states = run(this)
-            % TODO: Implement an option to run the lap from 0 speed at S/F line.
             this.vehicle.initialise();
             
             % Out lap
@@ -31,6 +30,7 @@ classdef SteadyStateLapSimulation < handle
             states = this.runSingleLap(vCarInitialOutLap);
             
             % Push lap
+            % TODO: Optimise further by considering whether only first corner needs to be rerun 
             vCarInitialPushLap = states.results.vCar(end);
             states = this.runSingleLap(vCarInitialPushLap);
         end
