@@ -31,7 +31,7 @@ classdef VehicleStates < matlab.mixin.Copyable
     methods
         function obj = VehicleStates(sRun)
             arguments
-                sRun (:,1) double {mustBeNonempty, mustBeFinite, mustBeNonnegative}
+                sRun (:,1) double {mustBeFinite, mustBeNonnegative} = []
             end
             assert(issorted(sRun, "strictascend"), "sRun must be monotonically increasing with no duplicates.");
             loggableStates = obj.loggedStates;
@@ -78,7 +78,7 @@ classdef VehicleStates < matlab.mixin.Copyable
         function varargout = crop(this, args)
             arguments
                 this (1,1) VehicleStates
-                args.StartIndex double {mustBeInteger}
+                args.StartIndex double {mustBeInteger} = 1
                 args.EndIndex double {mustBeScalarOrEmpty, mustBeInteger} = this.stepCount
             end
             assert(args.StartIndex >= 1, "Start index cannot be less than 1.");
@@ -94,13 +94,30 @@ classdef VehicleStates < matlab.mixin.Copyable
         end
 
 
-        function append(this, otherState)
+        function varargout = append(this, otherState)
             arguments
                 this (1,1) VehicleStates
                 otherState (1,1) VehicleStates
             end
-            this.results = [this.results; otherState.results];
+            
+            if ~isempty(this.results)
+                % Make sure the states are continous and fix sRun mismatch if any.
+                otherStateResults = otherState.results;
+                firstDistanceStep = otherStateResults.sRun(2) - otherStateResults.sRun(1);
+                % otherStateResults = otherStateResults(2:end, :);
+                otherStateResults.sRun ...
+                    = otherStateResults.sRun - otherStateResults.sRun(1) + this.results.sRun(end) + firstDistanceStep;
+
+                this.results = [this.results; otherStateResults];
+            else
+                this.results = otherState.results;
+            end
+            
             this.stepCount = height(this.results);
+            
+            if nargout > 0
+                varargout{1} = this;
+            end
         end
     end
 

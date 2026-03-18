@@ -22,64 +22,68 @@ classdef SteadyStateLapSimulation < handle
     
     %% Public interface
     methods
-        function run(this)
+        function states = run(this)
             % TODO: Implement an option to run the lap from 0 speed at S/F line.
             this.vehicle.initialise();
-            initialSpeedOutLap = 0;
-            this.runSingleLap(initialSpeedOutLap);
+            
+            % Out lap
+            vCarInitialOutLap = 0;
+            states = this.runSingleLap(vCarInitialOutLap);
+            
+            % Push lap
+            vCarInitialPushLap = states.results.vCar(end);
+            states = this.runSingleLap(vCarInitialPushLap);
         end
     end
     
     %% Private Implementation
     methods (Access = private)
-        function runSingleLap(this, initialSpeed)
+        function states = runSingleLap(this, vCarInitial)
             % Calculate maximum corner speed.
-            cornerRadii = [this.track.corners.radius];
-            cornerCount = numel(cornerRadii);
+            cornerCount = numel(this.track.corners);
             straightCount = this.track.straightCount;
-            cornerSpeeds = this.vehicle.calculateMaxSteadyCornerSpeed(cornerRadii);
             iSegment = 0;
+            states = VehicleStates();
             while true
                 iSegment = iSegment + 1;
-
-            end
-        end
-        
-        
-        function forwardPass(this, distanceAlongStraight, startSpeed)
-            arguments
-                this
-                distanceAlongStraight double {mustBeVector}
-                startSpeed (1,1) double
-            end
-            assert(issorted(distanceAlongStraight, "ascend"), "Distance vector must be monotonically increasing.")
-            nPointsAlongStraight = numel(distanceAlongStraight);
-            
-            vecSize = size(distanceAlongStraight);
-            v = nan(vecSize);
-            ax = nan(vecSize);
-            ax_tractionLimited = nan(vecSize);
-            ax_powerLimited = nan(vecSize);
-
-            for ii = 1:nPointsAlongStraight                
-                if ii > 1
-                    prevSpeed = v(ii - 1);
-                    prevAccel = ax(ii - 1);
-                else
-                    prevSpeed = startSpeed;
-                    prevAccel = 0;
+                if iSegment > straightCount
+                    break
                 end
                 
-                ax_tractionLimited(ii) = this.vehicle.calculateSteadyTractionLimitedAcceleration(prevSpeed, prevAccel);
-                ax_powerLimited(ii) = this.vehicle.calculateSteadyPowerLimitedAcceleration(prevSpeed);
-                ax(ii) = min(ax_tractionLimited(ii), ax_powerLimited(ii));
-                
-                ds = distanceAlongStraight(ii) - distanceAlongStraight(ii - 1);
-                if ii > 1
-                    v(ii) = sqrt(prevSpeed .^ 2 + 2 .* prevAccel .* ds);
+                if iSegment > 1
+                    vCarStartOfStraight = states.results.vCar(end);
                 else
-                    v(ii) = startSpeed;
+                    vCarStartOfStraight = vCarInitial;
                 end
+                
+                sRunStraight = 0 : this.distanceStep : this.track.straightLengths(iSegment);
+                forwardPass = this.vehicle.driveStraightLineAccel(sRunStraight, vCarStartOfStraight);
+                if iSegment > cornerCount
+                    states.append(forwardPass);
+                    break
+                end
+                
+                % Find out max speed into next corner
+                sRunCorner = 0: this.distanceStep : this.track.corners(iSegment).distance;
+                radiusCorner = this.track.corners(iSegment).radius;
+                corner = this.vehicle.driveSteadyStateCorner(sRunCorner, radiusCorner);
+                vCarEndOfStraight = corner.results.vCar(1);
+                
+                backwardsPass = this.vehicle.driveStraightLineBraking(sRunStraight, vCarEndOfStraight);
+                iStartBraking = find(forwardPass.results.vCar > backwardsPass.results.vCar, 1, "first");
+                if iStartBraking == 1
+                    % Previous corner too fast
+                    % TODO: Handle previous corner too fast scenario.
+                    error("Unhandled scenario: Previous corner too fast.")
+                elseif isempty(iStartBraking)
+                    % Previous corner too fast (next corner too fast)
+                    % TODO: Handle next corner too slow scenatio.
+                    error("Unhandled scenario : Next corner too slow.")
+                end
+                
+                forwardPass.crop(EndIndex=iStartBraking - 1);
+                backwardsPass.crop(StartIndex=iStartBraking);
+                states.append(forwardPass).append(backwardsPass).append(corner);
             end
         end
     end

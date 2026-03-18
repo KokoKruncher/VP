@@ -49,9 +49,9 @@ vehicle.aeroDownforceFactor     = ClA;
 vehicle.rFinalDrive             = FDR;
 vehicle.rTransmissionRatio      = GR;
 vehicle.eTransmission           = eta;
-vehicle.nMotorMapLookup         = Motor_torque_lookup(1,:) ./ 60;
+vehicle.nMotorMapLookup         = Motor_torque_lookup(1,:) .* 2 .* pi ./ 60; % rpm to rad/s
 vehicle.MMotorMapLookup         = Motor_torque_lookup(2,:);
 
 steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
-steadyStateSim.run();
+states = steadyStateSim.run();
 

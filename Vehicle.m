@@ -1,5 +1,5 @@
 classdef Vehicle < handle
-    % Defines the parameters needed for the vehicle.
+    % A vehicle that can perform simple steady-state manouvres.
     properties
         mCarTotal               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         rWeightBalF             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
@@ -14,7 +14,7 @@ classdef Vehicle < handle
         rFinalDrive             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         rTransmissionRatio      double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         eTransmission           double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        nMotorMapLookup         (:,1) double
+        nMotorMapLookup         (:,1) double % radians per second
         MMotorMapLookup         (:,1) double
     end
 
@@ -23,7 +23,7 @@ classdef Vehicle < handle
         weight double {mustBeScalarOrEmpty}
         FzFrontStatic double {mustBeScalarOrEmpty}
         FzRearStatic double {mustBeScalarOrEmpty}
-        nMotorToMMotorMax {mustBeA(nMotorToMMotorMax, 'griddedInterpolant')}
+        nMotorToMMotorMax {mustBeA(nMotorToMMotorMax, 'griddedInterpolant')} = griddedInterpolant()
         totalGearRatio double {mustBeScalarOrEmpty}
     end
 
@@ -145,7 +145,35 @@ classdef Vehicle < handle
                 sRun (:,1) double
                 vCarEndOfStraight (1,1) double
             end
+            assert(issorted(sRun, "strictascend"), "Distance vector must be monotonically increasing.")
+            stepCount = numel(sRun);
+            vecSize = size(sRun);
+            vCar = nan(vecSize);
+            gLong = nan(vecSize);
+
+            for ii = stepCount : -1 : 1              
+                if ii < stepCount
+                    vCarNext = vCar(ii + 1);
+                else
+                    vCarNext = vCarEndOfStraight;
+                end
+                
+                gLong(ii) = this.calculate_gLongBraking(vCarNext);
+                
+                if ii < stepCount
+                    ds = sRun(ii + 1) - sRun(ii);
+                    vCar(ii) = sqrt(vCarNext .^ 2 - 2 .* gLong(ii) .* ds);
+                else
+                    vCar(ii) = vCarEndOfStraight;
+                end
+            end
             
+            state = VehicleStates(sRun);
+            indices = 1:numel(sRun);
+            state.log("vCar", vCar, indices);
+            state.logConstant("gLat", 0);
+            state.log("gLong", gLong, indices);
+            this.backCalculateStates(state);
         end
     end
     
@@ -169,11 +197,14 @@ classdef Vehicle < handle
                 state (1,1) VehicleStates 
             end
             % Requires vCar, gLat & gLong to be pre-calculated.
-            tRun = this.calculate_tRun(sRun, vCar);
-            [FLiftF, FLiftR, FDrag] = this.calculateAeroLoads(vCar);
-            [FzFront, FzRear] = this.calculateAxleLoads(vCar, gLong);
-            FxTyreRear = this.mCarTotal .* gLong;
+            tRun = this.calculate_tRun(state.results.sRun, state.results.vCar);
+            [FLiftF, FLiftR, FDrag] = this.calculateAeroLoads(state.results.vCar);
+            [FzFront, FzRear] = this.calculateAxleLoads(state.results.vCar, state.results.gLong);
+            FxTyreRear = this.mCarTotal .* state.results.gLong;
             MMotor = this.calculate_MMotorFromFxTyreRear(FxTyreRear);
+            
+            % Motor only supplies power in traction, no regen considered.
+            MMotor(MMotor < 0) = 0;
             
             indices = 1:numel(tRun);
             state.log("tRun", tRun, indices);
@@ -181,7 +212,7 @@ classdef Vehicle < handle
             state.log("FzFront", FzFront, indices);
             state.log("FzRear", FzRear, indices);
             state.log("FLiftF", FLiftF, indices);
-            state.log("FliftR", FLiftR, indices);
+            state.log("FLiftR", FLiftR, indices);
             state.log("FDrag", FDrag, indices);         
         end
         
@@ -205,6 +236,7 @@ classdef Vehicle < handle
         function MMotor = calculate_MMotorFromFxTyreRear(this, FxTyreRear)
             MWheel = FxTyreRear .* this.radiusTyreRollingRear;
             MMotor = MWheel ./ this.totalGearRatio;
+            MMotor = MMotor ./ this.eTransmission;
         end
         
         
@@ -223,10 +255,27 @@ classdef Vehicle < handle
             nWheelRear = vCar ./ this.radiusTyreRollingRear;
             nMotor = nWheelRear .* this.totalGearRatio;
             MMotorMax = this.nMotorToMMotorMax(nMotor);
-            MWheelMax = MMotorMax .* this.totalGearRatio;
+            if isnan(MMotorMax)
+                % We are outside the motor torque map. We will assume that the last nMotor value in the map is the max
+                % rpm of the motor and give 0 power here.
+                MMotorMax = 0;
+            end
+            MWheelMax = MMotorMax .* this.totalGearRatio .* this.eTransmission;
             FxTyreRearPowerLimited = MWheelMax ./ this.radiusTyreRollingRear;
             [~, ~, FDrag] = this.calculateAeroLoads(vCar);
             gLongPowerLimited = (FxTyreRearPowerLimited - FDrag) ./ this.mCarTotal;
+        end
+        
+        
+        function gLongBraking = calculate_gLongBraking(this, vCar)
+            % Since the tyres don't have a load sensitivity, the individual front and rear axle loads don't matter. And
+            % the aero map has no ride height dependency, so we can just calculate total loads by passing any gLong into
+            % the calculateAxleLoads() function.
+            dummygLong = 0;
+            [FzFront, FzRear] = this.calculateAxleLoads(vCar, dummygLong);
+            FzTotal = FzFront + FzRear; 
+            [~, ~, FDrag] = this.calculateAeroLoads(vCar);
+            gLongBraking = (-(this.muTyreLong .* FzTotal) - FDrag) ./ this.mCarTotal;
         end
     end
 end
