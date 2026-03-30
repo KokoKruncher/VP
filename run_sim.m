@@ -57,6 +57,19 @@ lap = steadyStateSim.run();
 %% Plot results
 plotResults(lap);
 
+%% Mass sensitivity
+% masses = [700:10:900];
+% lapTimes = nan(size(masses));
+% for ii = 1:numel(masses)
+%     vehicle.mCarTotal = masses(ii);
+%     sim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
+%     lap = sim.run();
+%     lapTimes(ii) = lap.results.tRun(end);
+% end
+% 
+% figure()
+% plot(masses, lapTimes)
+
 %% Functions
 
 function varargout = plotResults(lap)
