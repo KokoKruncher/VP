@@ -26,6 +26,7 @@ classdef SteadyStateLapSimulation < handle
             this.vehicle.initialise();
             
             % Out lap
+            % TODO: start simulating from the last corner
             vCarInitialOutLap = 0;
             states = this.runSingleLap(vCarInitialOutLap);
             
