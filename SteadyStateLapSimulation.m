@@ -78,9 +78,9 @@ classdef SteadyStateLapSimulation < handle
                     % TODO: Handle previous corner too fast scenario.
                     error("Unhandled scenario: Previous corner too fast.")
                 elseif isempty(iStartBraking)
-                    % Previous corner too fast (next corner too fast)
-                    % TODO: Handle next corner too slow scenatio.
-                    error("Unhandled scenario : Next corner too slow.")
+                    % Previous corner too slow (next corner too fast)
+                    % TODO: Handle next corner too fast scenario.
+                    error("Unhandled scenario : Next corner too fast.")
                 end
                 
                 forwardPass.crop(EndIndex=iStartBraking - 1);
