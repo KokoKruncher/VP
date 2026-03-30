@@ -154,11 +154,13 @@ classdef Vehicle < handle
             for ii = stepCount : -1 : 1              
                 if ii < stepCount
                     vCarNext = vCar(ii + 1);
+                    gLongNext = gLong(ii + 1);
                 else
                     vCarNext = vCarEndOfStraight;
+                    gLongNext = 0;
                 end
                 
-                gLong(ii) = this.calculate_gLongBraking(vCarNext);
+                gLong(ii) = this.calculate_gLongBraking(vCarNext, gLongNext);
                 
                 if ii < stepCount
                     ds = sRun(ii + 1) - sRun(ii);
@@ -267,12 +269,8 @@ classdef Vehicle < handle
         end
         
         
-        function gLongBraking = calculate_gLongBraking(this, vCar)
-            % Since the tyres don't have a load sensitivity, the individual front and rear axle loads don't matter. And
-            % the aero map has no ride height dependency, so we can just calculate total loads by passing any gLong into
-            % the calculateAxleLoads() function.
-            dummygLong = 0;
-            [FzFront, FzRear] = this.calculateAxleLoads(vCar, dummygLong);
+        function gLongBraking = calculate_gLongBraking(this, vCar, gLongPrev)
+            [FzFront, FzRear] = this.calculateAxleLoads(vCar, gLongPrev);
             [~, ~, FDrag] = this.calculateAeroLoads(vCar);
             FxFrontMax = -this.tyres.calculateFxMax(FzFront);
             FxRearMax = -this.tyres.calculateFxMax(FzRear);
