@@ -1,5 +1,3 @@
-% TODO: Add switch for constant mu tyre for calculate_gLongBraking, calculate_gLongTractionLimitedStraightLine,
-% driveSteadyStateCorner vCar calculation.
 classdef Vehicle < handle
     % A vehicle that can perform simple steady-state manouvres.
     properties
@@ -79,6 +77,8 @@ classdef Vehicle < handle
             % stated that it is a bicycle model. Shouldn't be hard to implement but in CW1 and all the tutorials, it was
             % never considered for the calculation of max gLat.
             % For now, we do not consider yaw moment balance.
+            
+            % TODO: Add switch for constant mu tyre and load-dependent tyre
             g = 9.81;
             gLong = 0;...
             vCar = sqrt( (this.tyres.muLat .* cornerRadius .* this.mCarTotal .* g) ...
@@ -273,9 +273,10 @@ classdef Vehicle < handle
             % the calculateAxleLoads() function.
             dummygLong = 0;
             [FzFront, FzRear] = this.calculateAxleLoads(vCar, dummygLong);
-            FzTotal = FzFront + FzRear; 
             [~, ~, FDrag] = this.calculateAeroLoads(vCar);
-            gLongBraking = (-this.tyres.calculateFxMax(FzTotal) - FDrag) ./ this.mCarTotal;
+            FxFrontMax = -this.tyres.calculateFxMax(FzFront);
+            FxRearMax = -this.tyres.calculateFxMax(FzRear);
+            gLongBraking = (FxFrontMax + FxRearMax - FDrag) ./ this.mCarTotal;
         end
     end
 end

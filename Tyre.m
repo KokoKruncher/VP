@@ -5,7 +5,7 @@ classdef (Abstract) Tyre < handle
     
     
     methods (Abstract)
-        calculateFxMax(this)
-        calculateFyMax(this)
+        calculateFxMax(this, Fz)
+        calculateFyMax(this, Fz)
     end
 end

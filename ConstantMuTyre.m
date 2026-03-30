@@ -20,6 +20,7 @@ classdef ConstantMuTyre < Tyre
             FxMax(Fz <= 0) = 0;
         end
         
+        
         function FyMax = calculateFyMax(this, Fz)
             FyMax = this.muLat .* Fz;
             FyMax(Fz <= 0) = 0;
