@@ -40,6 +40,7 @@ classdef SteadyStateLapSimulation < handle
     %% Private Implementation
     methods (Access = private)
         function states = runSingleLap(this, vCarInitial)
+            tic
             % Calculate maximum corner speed.
             cornerCount = numel(this.track.corners);
             straightCount = this.track.straightCount;
@@ -86,6 +87,7 @@ classdef SteadyStateLapSimulation < handle
                 backwardsPass.crop(StartIndex=iStartBraking);
                 states.append(forwardPass).append(backwardsPass).append(corner);
             end
+            toc
         end
     end
 end

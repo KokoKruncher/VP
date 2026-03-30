@@ -1,3 +1,5 @@
+% TODO: Add switch for constant mu tyre for calculate_gLongBraking, calculate_gLongTractionLimitedStraightLine,
+% driveSteadyStateCorner vCar calculation.
 classdef Vehicle < handle
     % A vehicle that can perform simple steady-state manouvres.
     properties
@@ -5,9 +7,7 @@ classdef Vehicle < handle
         rWeightBalF             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         wheelbase               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         hCoG                    double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        radiusTyreRollingRear   double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        muTyreLong              double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        muTyreLat               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        tyres                   Tyre {mustBeScalarOrEmpty} = ConstantMuTyre.empty()
         rAeroBalF               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         aeroDragFactor          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         aeroDownforceFactor     double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
@@ -81,8 +81,8 @@ classdef Vehicle < handle
             % For now, we do not consider yaw moment balance.
             g = 9.81;
             gLong = 0;...
-            vCar = sqrt( (this.muTyreLat .* cornerRadius .* this.mCarTotal .* g) ...
-                      ./ (this.mCarTotal - this.muTyreLat .* cornerRadius .* this.aeroDownforceFactor) );
+            vCar = sqrt( (this.tyres.muLat .* cornerRadius .* this.mCarTotal .* g) ...
+                      ./ (this.mCarTotal - this.tyres.muLat .* cornerRadius .* this.aeroDownforceFactor) );
             gLat = this.calculate_gLat(vCar, cornerRadius);
             
             state = VehicleStates(sRun);
@@ -234,7 +234,7 @@ classdef Vehicle < handle
         
         
         function MMotor = calculate_MMotorFromFxTyreRear(this, FxTyreRear)
-            MWheel = FxTyreRear .* this.radiusTyreRollingRear;
+            MWheel = FxTyreRear .* this.tyres.rollingRadius;
             MMotor = MWheel ./ this.totalGearRatio;
             MMotor = MMotor ./ this.eTransmission;
         end
@@ -247,12 +247,12 @@ classdef Vehicle < handle
             FzFrontNegative(FzFrontNegative >= 0) = 0;
             % FzFront = FzFront - FzFrontNegative;
             FzRear = FzRear + FzFrontNegative;
-            gLongTractionLimited = FzRear .* this.muTyreLong ./ this.mCarTotal;
+            gLongTractionLimited = this.tyres.calculateFxMax(FzRear) ./ this.mCarTotal;
         end
 
 
         function gLongPowerLimited = calculate_gLongPowerLimited(this, vCar)
-            nWheelRear = vCar ./ this.radiusTyreRollingRear;
+            nWheelRear = vCar ./ this.tyres.rollingRadius;
             nMotor = nWheelRear .* this.totalGearRatio;
             MMotorMax = this.nMotorToMMotorMax(nMotor);
             if isnan(MMotorMax)
@@ -261,7 +261,7 @@ classdef Vehicle < handle
                 MMotorMax = 0;
             end
             MWheelMax = MMotorMax .* this.totalGearRatio .* this.eTransmission;
-            FxTyreRearPowerLimited = MWheelMax ./ this.radiusTyreRollingRear;
+            FxTyreRearPowerLimited = MWheelMax ./ this.tyres.rollingRadius;
             [~, ~, FDrag] = this.calculateAeroLoads(vCar);
             gLongPowerLimited = (FxTyreRearPowerLimited - FDrag) ./ this.mCarTotal;
         end
@@ -275,7 +275,7 @@ classdef Vehicle < handle
             [FzFront, FzRear] = this.calculateAxleLoads(vCar, dummygLong);
             FzTotal = FzFront + FzRear; 
             [~, ~, FDrag] = this.calculateAeroLoads(vCar);
-            gLongBraking = (-(this.muTyreLong .* FzTotal) - FDrag) ./ this.mCarTotal;
+            gLongBraking = (-this.tyres.calculateFxMax(FzTotal) - FDrag) ./ this.mCarTotal;
         end
     end
 end
