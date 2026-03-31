@@ -13,7 +13,11 @@ classdef VehicleStates < matlab.mixin.Copyable
             "FzRear"
             "FLiftF";
             "FLiftR";
-            "FDrag"]
+            "FDrag";
+            "LPUAF";
+            "LPUAR";
+            "dymuF";
+            "dymuR"]
     end
 
 

@@ -23,6 +23,13 @@ eta                 = 0.88;   % Final driveline efficiency [-]
 Motor_torque_lookup = [0 2000 4000 6000 8000 10000 12000 14000 16000 18000; ...
     360 360 360 360 270 216 180 154 135 120]; % Motor torque lookup
 
+% Tyre model
+decaycoeff              = 3e-5;   % Tyre decay coefficient [-]
+TyreWidthFront          = 260;
+TyreDiameterFront       = 590;
+TyreWidthRear           = 380;
+TyreDiameterRear        = 650;
+
 % Circuit properties: 
 Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
 Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
@@ -41,8 +48,8 @@ vehicle.rWeightBalF             = D_weight;
 vehicle.wheelbase               = L ./  1000;
 vehicle.hCoG                    = h_cog ./ 1000;
 vehicle.radiusTyreRollingRear   = R_tyre ./ 1000;
-vehicle.muTyreLong              = mu_lon;
-vehicle.muTyreLat               = mu_lat;
+vehicle.muTyreLong_peak         = mu_lon;
+vehicle.muTyreLat_peak          = mu_lat;
 vehicle.rAeroBalF               = D_aero;
 vehicle.aeroDragFactor          = CdA;
 vehicle.aeroDownforceFactor     = ClA;
@@ -51,6 +58,9 @@ vehicle.rTransmissionRatio      = GR;
 vehicle.eTransmission           = eta;
 vehicle.nMotorMapLookup         = Motor_torque_lookup(1,:) .* 2 .* pi ./ 60; % rpm to rad/s
 vehicle.MMotorMapLookup         = Motor_torque_lookup(2,:);
+vehicle.tyreDecayCoefficient    = decaycoeff;
+vehicle.TyreWidthFront          = TyreWidthFront./1000;
+vehicle.TyreWidthRear           = TyreWidthRear./1000;
 
 %% Run the lap
 steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
@@ -89,3 +99,14 @@ if nargout > 1
     varargout{1} = hFig;
 end
 end
+
+%% Plot tire friction
+figure('Name', 'Tire Friction Plot');
+plot(lap.results.sRun, lap.results.dymuF, 'Color', '#f2b248', 'LineWidth', 1.5, 'DisplayName', 'Front');
+hold on;
+plot(lap.results.sRun, lap.results.dymuR, 'Color', '#7c4081', 'LineWidth', 1.5, 'DisplayName', 'Rear');
+grid on;
+xlabel('Distance (m)')
+ylabel('Friction coefficient');
+title('Dynamic tire friction');
+legend();
