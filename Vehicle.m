@@ -5,12 +5,6 @@ classdef Vehicle < handle
         rWeightBalF             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         wheelbase               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         hCoG                    double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        radiusTyreRollingRear   double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        TyreWidthFront          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        TyreWidthRear           double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        muTyreLong_peak         double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        muTyreLat_peak          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        tyreDecayCoefficient    double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         rAeroBalF               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         aeroDragFactor          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         aeroDownforceFactor     double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
@@ -19,6 +13,7 @@ classdef Vehicle < handle
         eTransmission           double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         nMotorMapLookup         (:,1) double % radians per second
         MMotorMapLookup         (:,1) double
+        tire                    LoadDependentTireModel
     end
 
     % Pre-calculated values
@@ -84,8 +79,8 @@ classdef Vehicle < handle
             % For now, we do not consider yaw moment balance.
             g = 9.81;
             gLong = 0;...
-            vCar = sqrt( (this.muTyreLat_peak .* cornerRadius .* this.mCarTotal .* g) ...
-                      ./ (this.mCarTotal - this.muTyreLat_peak .* cornerRadius .* this.aeroDownforceFactor) );
+            vCar = sqrt( (this.tire.muTyreLat_peak .* cornerRadius .* this.mCarTotal .* g) ...
+                      ./ (this.mCarTotal - this.tire.muTyreLat_peak .* cornerRadius .* this.aeroDownforceFactor) );
             gLat = this.calculate_gLat(vCar, cornerRadius);
 
             state = VehicleStates(sRun);
@@ -94,8 +89,9 @@ classdef Vehicle < handle
             state.logConstant("gLat", gLat);
             this.backCalculateStates(state);
 
-            [muDynamicFront, LPUAF] = this.calculate_tyrefrictioncoefficient(state.results.FzFront, 'lat', 'front');
-            [muDynamicRear, LPUAR]  = this.calculate_tyrefrictioncoefficient(state.results.FzRear, 'lat', 'rear');
+            % TODO: Move to backCalcState
+            [muDynamicFront, LPUAF] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzFront, 'lat', 'front');
+            [muDynamicRear, LPUAR]  = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear, 'lat', 'rear');
             indices = 1:numel(sRun);
             state.log("LPUAF", LPUAF, indices);
             state.log("dymuF", muDynamicFront, indices);
@@ -148,7 +144,7 @@ classdef Vehicle < handle
             state.log("gLongPowerLimited", gLongPowerLimited, indices);
             this.backCalculateStates(state);
 
-            [muDynamicRear, LPUAR] = this.calculate_tyrefrictioncoefficient(state.results.FzRear, 'long', 'rear');
+            [muDynamicRear, LPUAR] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear, 'long', 'rear');
             state.log("LPUAR", LPUAR, indices);
             state.log("dymuR", muDynamicRear, indices);
         end
@@ -192,8 +188,8 @@ classdef Vehicle < handle
             state.log("gLong", gLong, indices);
             this.backCalculateStates(state);
 
-            [muDynamicFront, LPUAF] = this.calculate_tyrefrictioncoefficient(state.results.FzFront, 'long', 'front');
-            [muDynamicRear, LPUAR]  = this.calculate_tyrefrictioncoefficient(state.results.FzRear, 'long', 'rear');
+            [muDynamicFront, LPUAF] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzFront, 'long', 'front');
+            [muDynamicRear, LPUAR]  = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear, 'long', 'rear');
             state.log("LPUAF", LPUAF, indices);
             state.log("dymuF", muDynamicFront, indices);
             state.log("LPUAR", LPUAR, indices);
@@ -255,28 +251,10 @@ classdef Vehicle < handle
             FzFront = this.FzFrontStatic + FLiftF - loadTransferLong;
             FzRear = this.FzRearStatic + FLiftR + loadTransferLong;
         end
-        
-
-        function [muDynamic, LPUA] = calculate_tyrefrictioncoefficient(this, Fz, type, axle)
-            if strcmp(axle, 'front')
-                TyreWidth = this.TyreWidthFront;
-            else
-                TyreWidth = this.TyreWidthRear;
-            end
-
-            if strcmp(type, 'long')
-                mu_peak = this.muTyreLong_peak;
-            else
-                mu_peak = this.muTyreLat_peak;
-            end
-
-            LPUA = Fz./(TyreWidth.*this.radiusTyreRollingRear.*pi);
-            muDynamic = mu_peak - (this.tyreDecayCoefficient.*mu_peak.*LPUA);
-        end
 
 
         function MMotor = calculate_MMotorFromFxTyreRear(this, FxTyreRear)
-            MWheel = FxTyreRear .* this.radiusTyreRollingRear;
+            MWheel = FxTyreRear .* this.tire.radiusTyreRollingRear;
             MMotor = MWheel ./ this.totalGearRatio;
             MMotor = MMotor ./ this.eTransmission;
         end
@@ -289,16 +267,16 @@ classdef Vehicle < handle
             FzFrontNegative(FzFrontNegative >= 0) = 0;
 
             % Dynamic friction coefficient
-            muDynamic = this.calculate_tyrefrictioncoefficient(FzRear, 'long', 'rear');
+            [muDynamicRear, ~] = this.tire.calculate_tyrefrictioncoefficient(FzRear, 'long', 'rear');
 
             % FzFront = FzFront - FzFrontNegative;
             FzRear = FzRear + FzFrontNegative;
-            gLongTractionLimited = FzRear .* muDynamic ./ this.mCarTotal;
+            gLongTractionLimited = FzRear .* muDynamicRear ./ this.mCarTotal;
         end
 
 
         function gLongPowerLimited = calculate_gLongPowerLimited(this, vCar)
-            nWheelRear = vCar ./ this.radiusTyreRollingRear;
+            nWheelRear = vCar ./ this.tire.radiusTyreRollingRear;
             nMotor = nWheelRear .* this.totalGearRatio;
             MMotorMax = this.nMotorToMMotorMax(nMotor);
             if isnan(MMotorMax)
@@ -307,7 +285,7 @@ classdef Vehicle < handle
                 MMotorMax = 0;
             end
             MWheelMax = MMotorMax .* this.totalGearRatio .* this.eTransmission;
-            FxTyreRearPowerLimited = MWheelMax ./ this.radiusTyreRollingRear;
+            FxTyreRearPowerLimited = MWheelMax ./ this.tire.radiusTyreRollingRear;
             [~, ~, FDrag] = this.calculateAeroLoads(vCar);
             gLongPowerLimited = (FxTyreRearPowerLimited - FDrag) ./ this.mCarTotal;
         end
@@ -315,8 +293,8 @@ classdef Vehicle < handle
         
         function gLongBraking = calculate_gLongBraking(this, vCar, gLongNext)
             [FzFront, FzRear] = this.calculateAxleLoads(vCar, gLongNext);
-            muDynamicFront = this.calculate_tyrefrictioncoefficient(FzFront, 'long', 'front');
-            muDynamicRear  = this.calculate_tyrefrictioncoefficient(FzRear, 'long', 'rear');
+            [muDynamicFront, ~] = this.tire.calculate_tyrefrictioncoefficient(FzFront, 'long', 'front');
+            [muDynamicRear, ~]  = this.tire.calculate_tyrefrictioncoefficient(FzRear, 'long', 'rear');
             [~, ~, FDrag] = this.calculateAeroLoads(vCar);
             gLongBraking = (-(muDynamicFront.*FzFront + muDynamicRear.*FzRear) - FDrag) ./ this.mCarTotal;
         end

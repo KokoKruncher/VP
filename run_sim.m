@@ -1,6 +1,6 @@
 %% ENGR6014: Motorsport Vehicle Performance 2025-2026
 % Assignment 2 - Steady-State Laptime Simulator Development (Vehicle Parameters)
-% Version: 1.0
+% Version: 1.1
 
 clear; clc; close all;
 
@@ -11,9 +11,6 @@ m                   = 810;    % Vehicle Mass including driver [kg]
 D_weight            = 0.45;   % Weight distribution - Front-to-Rear [-] 
 L                   = 3020;   % Wheelbase [mm]
 h_cog               = 300;    % Centre of gravity height [mm]
-R_tyre              = 340;    % Rear tyre rolling radius [mm]
-mu_lon              = 1.30;   % Tyre friction coefficient [-], Braking & Acceleration
-mu_lat              = 1.36;   % Tyre friction coefficient [-], Cornering
 D_aero              = 0.43;   % Aerodynamic balance - Front-to-Rear [-] 
 CdA                 = 0.50;   % Aerodynamic drag factor [kg/m]
 ClA                 = 0.70;   % Aerodynamic downforce factor [kg/m]
@@ -24,11 +21,12 @@ Motor_torque_lookup = [0 2000 4000 6000 8000 10000 12000 14000 16000 18000; ...
     360 360 360 360 270 216 180 154 135 120]; % Motor torque lookup
 
 % Tyre model
-decaycoeff              = 3e-5;   % Tyre decay coefficient [-]
-TyreWidthFront          = 260;
-TyreDiameterFront       = 590;
-TyreWidthRear           = 380;
-TyreDiameterRear        = 650;
+tyreDecayCoeff      = 3e-5;   % Tyre decay coefficient [-]
+TyreWidthFront      = 260;
+TyreWidthRear       = 380;
+R_tyre              = 340;    % Rear tyre rolling radius [mm]
+mu_lon              = 1.30;   % Tyre friction coefficient [-], Braking & Acceleration
+mu_lat              = 1.36;   % Tyre friction coefficient [-], Cornering
 
 % Circuit properties: 
 Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
@@ -42,14 +40,19 @@ Delta_S             = 0.1;   % Calculation step size interval [m]
 % All calculations are done in SI units! Need to convert all parameters to SI.
 track = SteadyStateTrack(Radius_corner, deg2rad(Angle_corner), Length_straight);
 
+tire = LoadDependentTireModel();
+tire.radiusTyreRollingRear   = R_tyre ./ 1000;
+tire.tyreDecayCoeff          = tyreDecayCoeff;
+tire.TyreWidthFront          = TyreWidthFront./1000;
+tire.TyreWidthRear           = TyreWidthRear./1000;
+tire.muTyreLong_peak         = mu_lon;
+tire.muTyreLat_peak          = mu_lat;
+
 vehicle = Vehicle();
 vehicle.mCarTotal               = m;
 vehicle.rWeightBalF             = D_weight;
 vehicle.wheelbase               = L ./  1000;
 vehicle.hCoG                    = h_cog ./ 1000;
-vehicle.radiusTyreRollingRear   = R_tyre ./ 1000;
-vehicle.muTyreLong_peak         = mu_lon;
-vehicle.muTyreLat_peak          = mu_lat;
 vehicle.rAeroBalF               = D_aero;
 vehicle.aeroDragFactor          = CdA;
 vehicle.aeroDownforceFactor     = ClA;
@@ -58,9 +61,7 @@ vehicle.rTransmissionRatio      = GR;
 vehicle.eTransmission           = eta;
 vehicle.nMotorMapLookup         = Motor_torque_lookup(1,:) .* 2 .* pi ./ 60; % rpm to rad/s
 vehicle.MMotorMapLookup         = Motor_torque_lookup(2,:);
-vehicle.tyreDecayCoefficient    = decaycoeff;
-vehicle.TyreWidthFront          = TyreWidthFront./1000;
-vehicle.TyreWidthRear           = TyreWidthRear./1000;
+vehicle.tire = tire;
 
 %% Run the lap
 steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
