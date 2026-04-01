@@ -144,7 +144,7 @@ classdef Vehicle < handle
             state.log("gLongPowerLimited", gLongPowerLimited, indices);
             this.backCalculateStates(state);
 
-            [muDynamicRear, LPUAR] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear, 'long', 'rear');
+            [muDynamicRear, LPUAR] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear./2, 'long', 'rear');
             state.log("LPUAR", LPUAR, indices);
             state.log("dymuR", muDynamicRear, indices);
         end
@@ -188,8 +188,8 @@ classdef Vehicle < handle
             state.log("gLong", gLong, indices);
             this.backCalculateStates(state);
 
-            [muDynamicFront, LPUAF] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzFront, 'long', 'front');
-            [muDynamicRear, LPUAR]  = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear, 'long', 'rear');
+            [muDynamicFront, LPUAF] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzFront./2, 'long', 'front');
+            [muDynamicRear, LPUAR]  = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear./2, 'long', 'rear');
             state.log("LPUAF", LPUAF, indices);
             state.log("dymuF", muDynamicFront, indices);
             state.log("LPUAR", LPUAR, indices);
@@ -267,7 +267,7 @@ classdef Vehicle < handle
             FzFrontNegative(FzFrontNegative >= 0) = 0;
 
             % Dynamic friction coefficient
-            [muDynamicRear, ~] = this.tire.calculate_tyrefrictioncoefficient(FzRear, 'long', 'rear');
+            [muDynamicRear, ~] = this.tire.calculate_tyrefrictioncoefficient(FzRear./2, 'long', 'rear');
 
             % FzFront = FzFront - FzFrontNegative;
             FzRear = FzRear + FzFrontNegative;
@@ -293,8 +293,8 @@ classdef Vehicle < handle
         
         function gLongBraking = calculate_gLongBraking(this, vCar, gLongNext)
             [FzFront, FzRear] = this.calculateAxleLoads(vCar, gLongNext);
-            [muDynamicFront, ~] = this.tire.calculate_tyrefrictioncoefficient(FzFront, 'long', 'front');
-            [muDynamicRear, ~]  = this.tire.calculate_tyrefrictioncoefficient(FzRear, 'long', 'rear');
+            [muDynamicFront, ~] = this.tire.calculate_tyrefrictioncoefficient(FzFront./2, 'long', 'front');
+            [muDynamicRear, ~]  = this.tire.calculate_tyrefrictioncoefficient(FzRear./2, 'long', 'rear');
             [~, ~, FDrag] = this.calculateAeroLoads(vCar);
             gLongBraking = (-(muDynamicFront.*FzFront + muDynamicRear.*FzRear) - FDrag) ./ this.mCarTotal;
         end

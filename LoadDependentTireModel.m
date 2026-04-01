@@ -26,7 +26,7 @@ classdef LoadDependentTireModel < handle
             end
 
             LPUA = Fz./(TyreWidth.*this.radiusTyreRollingRear.*pi);
-            muDynamic = mu_peak - (this.tyreDecayCoeff.*mu_peak.*LPUA./2);
+            muDynamic = mu_peak - (this.tyreDecayCoeff.*mu_peak.*LPUA);
         end
     end
 
