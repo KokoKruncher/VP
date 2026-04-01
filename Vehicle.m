@@ -94,9 +94,9 @@ classdef Vehicle < handle
             [muDynamicRear, LPUAR]  = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear, 'lat', 'rear');
             indices = 1:numel(sRun);
             state.log("LPUAF", LPUAF, indices);
-            state.log("dymuF", muDynamicFront, indices);
+            state.log("muDynamicF", muDynamicFront, indices);
             state.log("LPUAR", LPUAR, indices);
-            state.log("dymuR", muDynamicRear, indices);
+            state.log("muDynamicR", muDynamicRear, indices);
         end
 
 
@@ -146,7 +146,7 @@ classdef Vehicle < handle
 
             [muDynamicRear, LPUAR] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear./2, 'long', 'rear');
             state.log("LPUAR", LPUAR, indices);
-            state.log("dymuR", muDynamicRear, indices);
+            state.log("muDynamicR", muDynamicRear, indices);
         end
         
         
@@ -191,9 +191,9 @@ classdef Vehicle < handle
             [muDynamicFront, LPUAF] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzFront./2, 'long', 'front');
             [muDynamicRear, LPUAR]  = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear./2, 'long', 'rear');
             state.log("LPUAF", LPUAF, indices);
-            state.log("dymuF", muDynamicFront, indices);
+            state.log("muDynamicF", muDynamicFront, indices);
             state.log("LPUAR", LPUAR, indices);
-            state.log("dymuR", muDynamicRear, indices);
+            state.log("muDynamicR", muDynamicRear, indices);
         end
     end
     

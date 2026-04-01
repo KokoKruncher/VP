@@ -103,9 +103,9 @@ end
 
 %% Plot tire friction
 figure('Name', 'Tire Friction Plot');
-plot(lap.results.sRun, lap.results.dymuF, 'Color', '#f2b248', 'LineWidth', 1.5, 'DisplayName', 'Front');
+plot(lap.results.sRun, lap.results.muDynamicF, 'Color', '#f2b248', 'LineWidth', 1.5, 'DisplayName', 'Front');
 hold on;
-plot(lap.results.sRun, lap.results.dymuR, 'Color', '#7c4081', 'LineWidth', 1.5, 'DisplayName', 'Rear');
+plot(lap.results.sRun, lap.results.muDynamicR, 'Color', '#7c4081', 'LineWidth', 1.5, 'DisplayName', 'Rear');
 grid on;
 xlabel('Distance (m)')
 ylabel('Friction coefficient');

@@ -16,8 +16,8 @@ classdef VehicleStates < matlab.mixin.Copyable
             "FDrag";
             "LPUAF";
             "LPUAR";
-            "dymuF";
-            "dymuR"]
+            "muDynamicF";
+            "muDynamicR"]
     end
 
 
