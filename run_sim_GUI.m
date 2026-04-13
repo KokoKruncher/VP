@@ -4,7 +4,7 @@
 
 clear; clc; close all;
 
-figure('Name', 'Lap Time Simulator', 'NumberTitle', 'off', 'Position', [100, 50, 1200, 700], 'Color', [0.94 0.94 0.94], 'Scrollable', 'on');
+figure('Name', 'Lap Time Simulator', 'NumberTitle', 'off', 'Position', [100, 50, 900, 400], 'Color', [0.94 0.94 0.94], 'Scrollable', 'on');
 
 % Column for the vehicle Parameters
 
@@ -95,7 +95,6 @@ function calculate(~,~)
     Motor_torque_lookup = [0 2000 4000 6000 8000 10000 12000 14000 16000 18000; ...
     360 360 360 360 270 216 180 154 135 120];
 
-    track = SteadyStateTrack(Radius_corner, deg2rad(Angle_corner), Length_straight);
     param_input = @(i) str2double(get(input_box(i),'String'));
 
     vehicle = Vehicle();
@@ -121,10 +120,15 @@ function calculate(~,~)
     Radius_corner                   = track_input(1);
     Angle_corner                    = track_input(2);
     Length_straight                 = track_input(3);
+
+    %% Track generation 
+    track = SteadyStateTrack(Radius_corner, deg2rad(Angle_corner), Length_straight);
+
+    %% Run the lap
+    steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
+    lap = steadyStateSim.run();
 end
-%% Run the lap
-steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
-lap = steadyStateSim.run();
+
 
 %% Plot results
 plotResults(lap);
