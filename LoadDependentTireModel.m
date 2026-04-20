@@ -2,7 +2,7 @@ classdef LoadDependentTireModel < handle
 
     % Tyre model
     properties
-        tyreDecayCoeff          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        tyreDecayCoeff          double {mustBeScalarOrEmpty, mustBeFinite}
         TyreWidthFront          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         TyreWidthRear           double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         radiusTyreRollingRear   double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
