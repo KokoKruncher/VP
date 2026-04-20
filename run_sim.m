@@ -21,7 +21,7 @@ Motor_torque_lookup = [0 2000 4000 6000 8000 10000 12000 14000 16000 18000; ...
     360 360 360 360 270 216 180 154 135 120]; % Motor torque lookup
 
 % Tyre model
-tyreDecayCoeff      = 0;   % Tyre decay coefficient [-] = 0 for constant tyre model
+tyreDecayCoeff      = 3e-5;   % Tyre decay coefficient [-] = 0 for constant tyre model
 TyreWidthFront      = 260;
 TyreWidthRear       = 380;
 R_tyre              = 340;    % Rear tyre rolling radius [mm]
