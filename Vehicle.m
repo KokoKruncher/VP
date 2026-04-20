@@ -144,7 +144,10 @@ classdef Vehicle < handle
             state.log("gLongPowerLimited", gLongPowerLimited, indices);
             this.backCalculateStates(state);
 
+            [muDynamicFront, LPUAF] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzFront./2, 'long', 'front');
             [muDynamicRear, LPUAR] = this.tire.calculate_tyrefrictioncoefficient(state.results.FzRear./2, 'long', 'rear');
+            state.log("LPUAF", LPUAF, indices);
+            state.log("muDynamicF", muDynamicFront, indices);
             state.log("LPUAR", LPUAR, indices);
             state.log("muDynamicR", muDynamicRear, indices);
         end
