@@ -4,11 +4,11 @@
 
 clear; clc; close all;
 
-figure('Name', 'Lap Time Simulator', 'NumberTitle', 'off', 'Position', [100, 50, 900, 400], 'Color', [0.94 0.94 0.94], 'Scrollable', 'on');
+fig = uifigure('Name', 'Lap Time Simulator', 'NumberTitle', 'off', 'Position', [100, 50, 900, 400], 'Color', [0.94 0.94 0.94], 'Scrollable', 'on');
 
 % Column for the vehicle Parameters
 
-uicontrol('Style', 'text', 'String', 'Vehicle Parameters', 'Position', [10 780 200 25], 'FontSize', 10, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'ForegroundColor', 'black');
+uilabel(fig, 'text', 'Vehicle Parameters', 'Position', [10 780 200 25], 'FontSize', 10, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
 
 vehicle_data = {'Vehicle Mass', 'Weight Dist Front', 'Wheelbase', 'CG Height', 'Rear Tyre Radius', 'Longitudinal tyre Mu', 'Lateral tyre Mu', 'Aero Balance front', 'Aero Drag Factor', 'Aero Downforce factor', 'Final drive ratio', 'Gear Ratio', 'Final driveline efficiency'};
 
@@ -21,16 +21,16 @@ input_box = gobjects(n,1);
 
 for i = 1:n
     y = 750 - (i-1)*28;
-    uicontrol('Style', 'text', 'String', vehicle_data{i}, 'Position', [10,y,175,20], 'FontSize', 8, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'ForegroundColor', 'black');
-    input_box(i) = uicontrol('Style', 'edit', 'String', default_values{i}, 'Position', [190,y+5,75,20], 'FontSize', 8, 'BackgroundColor', 'white', 'ForegroundColor', 'black');
-    uicontrol('Style', 'text', 'String', value_units{i}, 'Position', [270,y,60,20], 'FontSize', 8, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'ForegroundColor', 'black');
+    uilabel(fig, 'text', vehicle_data{i}, 'Position', [10,y,175,20], 'FontSize', 8, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
+    input_box(i) = uieditfield(fig, 'text', 'Value', default_values{i}, 'Editable', 'on', 'Position', [190,y+5,75,20], 'FontSize', 8, 'BackgroundColor', 'white', 'FontColor', 'black');
+    uilabel(fig, 'text',  value_units{i}, 'Position', [270,y,60,20], 'FontSize', 8, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
 end
 
 % Control buttons
 
-uicontrol('Style', 'pushbutton', 'String', 'START', 'Position', [570,560,120,35], 'FontSize', 10, 'FontWeight', 'bold', 'BackgroundColor', [0.2 0.6 0.2], 'ForegroundColor', 'white', 'Callback', @calculate);
+uibutton(fig, 'Text', 'START', 'Position', [570,560,120,35], 'FontSize', 10, 'FontWeight', 'bold', 'BackgroundColor', [0.2 0.6 0.2], 'FontColor', 'white', 'ButtonPushedFcn', @calculate);
 
-uicontrol('Style', 'pushbutton', 'String', 'RESET', 'Position', [570,520,120,35], 'FontSize', 10, 'BackgroundColor', [0.7 0.2 0.2], 'ForegroundColor', 'white', 'Callback', @reset);
+uibutton(fig, 'Text', 'RESET', 'Position', [570,520,120,35], 'FontSize', 10, 'BackgroundColor', [0.7 0.2 0.2], 'FontColor', 'white', 'ButtonPushedFcn', @reset);
 
 function reset(~,~)
     for k = 1:n
@@ -62,7 +62,7 @@ eta                 = 0.88;   % Final driveline efficiency [-]
 
 % Circuit parameters: 
 
-uicontrol('Style', 'text', 'String', 'Track Parameters', 'Position', [300 780 200 25], 'FontSize', 10, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'ForegroundColor', 'black');
+uilabel(fig, 'text', 'Track Parameters', 'Position', [300 780 200 25], 'FontSize', 10, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
 
 track_data = {'Corner Radius', 'Corner Angle', 'Length Straight'};
 
@@ -74,9 +74,9 @@ l = length(track_data);
 
 for b = 1:l
     y = 750 - (b-1)*28;
-    uicontrol('Style', 'text', 'String', track_data{b}, 'Position', [350 y 200 25], 'FontSize', 8, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'ForegroundColor', 'black');
-    input_box(b) = uicontrol('Style', 'edit', 'String', track_default_values{b}, 'Position', [530,y+5,125,20], 'FontSize', 8, 'BackgroundColor', 'white', 'ForegroundColor', 'black');
-    uicontrol('Style', 'text', 'String', track_units{b}, 'Position', [660,y,30,20], 'FontSize', 8, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'ForegroundColor', 'black');
+    uilabel(fig, 'text', track_data{b}, 'Position', [350 y 200 25], 'FontSize', 8, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
+    input_box(b) = uieditfield(fig, 'Text', 'Value', track_default_values{b}, 'Position', [530,y+5,125,20], 'FontSize', 8, 'BackgroundColor', 'white', 'FontColor', 'black');
+    uilabel(fig, 'text', track_units{b}, 'Position', [660,y,30,20], 'FontSize', 8, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
 end
 
 %{
@@ -115,7 +115,7 @@ function calculate(~,~)
     vehicle.MMotorMapLookup         = Motor_torque_lookup(2,:);
 
     %% Track parameters
-    track_input = @(b) str2num(get(input_box(b),'String'));
+    track_input = @(b) str2double(get(input_box(b),'String'));
 
     Radius_corner                   = track_input(1);
     Angle_corner                    = track_input(2);
