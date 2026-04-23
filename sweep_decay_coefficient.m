@@ -2,7 +2,9 @@
 % Assignment 2 - Steady-State Laptime Simulator Development (Vehicle Parameters)
 % Version: 1.1
 
-clear; close all;
+clear; clc; close all;
+
+decayCoefficients = [0, 1e-5:1e-5:4e-5];
 
 ParametersVersion = '2025-2026: v1';
 
@@ -23,7 +25,7 @@ Motor_torque_lookup = [0 2000 4000 6000 8000 10000 12000 14000 16000 18000; ...
     360 360 360 360 270 216 180 154 135 120]; % Motor torque lookup
 
 % Tyre model
-tyreDecayCoeff      = 3e-5;   % Tyre decay coefficient [-] 3e-5
+tyreDecayCoeff      = 0;   % Tyre decay coefficient [-] 3e-5
 TyreWidthFront      = 260;
 TyreWidthRear       = 380;
 R_tyre              = 340;    % Rear tyre rolling radius [mm]
@@ -67,58 +69,19 @@ vehicle.nMotorMapLookup         = Motor_torque_lookup(1,:) .* 2 .* pi ./ 60; % r
 vehicle.MMotorMapLookup         = Motor_torque_lookup(2,:);
 vehicle.tire = tire;
 
-%% Run the lap
-steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
-lap = steadyStateSim.run();
-
-%% Print outputs
-cornerSpeeds_kph = unique(lap.results.vCar(lap.results.gLong == 0), "stable") .* 3.6;
-
-fprintf("Lap time = %.3fs\n", lap.results.tRun(end));
-fprintf("Corner speeds:\n");
-fprintf("%2i: %3.2f kph\n", [(1:numel(cornerSpeeds_kph)).', cornerSpeeds_kph].');
-
-%% Plot results
-plotResults(lap);
-
-%% Functions
-
-function varargout = plotResults(lap)
-arguments
-    lap (1,1) VehicleStates
-end
-PARAMETERS = ["vCar", "gLong", "gLat"];
-CONVERSION_FACTORS = [3.6, 1/9.81, 1/9.81];
-UNITS = ["kph", "g", "g"];
-
-parameterCount = numel(PARAMETERS);
-hFig = figure(Visible="off");
-hTiles = tiledlayout(hFig, parameterCount, 1);
-for ii = 1:parameterCount
-    hAxes = nexttile(hTiles);
-    y = lap.results.(PARAMETERS(ii)) .* CONVERSION_FACTORS(ii);
-    rangeY = range(y);
-    plot(hAxes, lap.results.sRun, y, LineWidth=2);
-    grid(hAxes, "on");
-    xlabel(hAxes, "sRun (m)");
-    ylabel(hAxes, sprintf("%s (%s)", PARAMETERS(ii), UNITS(ii)));
-    ylim(hAxes, [min(y) - 0.1 * rangeY, max(y) + 0.1 * rangeY]);
-end
-title(hTiles, sprintf("Lap time = %.3fs", lap.results.tRun(end)));
-hFig.Visible = "on";
-
-if nargout > 1
-    varargout{1} = hFig;
-end
+sweepCount = numel(decayCoefficients);
+tLap = nan(1, sweepCount);
+for ii = 1:sweepCount
+    tire.tyreDecayCoeff = decayCoefficients(ii);
+    vehicle.tire = tire;
+    steadyStateSim = SteadyStateLapSimulation(track, vehicle, distanceStep=Delta_S);
+    lap = steadyStateSim.run();
+    tLap(ii) = lap.results.tRun(end);
 end
 
-%% Plot tire friction
-% figure('Name', 'Tire Friction Plot');
-% plot(lap.results.sRun, lap.results.muDynamicF, 'Color', '#f2b248', 'LineWidth', 1.5, 'DisplayName', 'Front');
-% hold on;
-% plot(lap.results.sRun, lap.results.muDynamicR, 'Color', '#7c4081', 'LineWidth', 1.5, 'DisplayName', 'Rear');
-% grid on;
-% xlabel('Distance (m)')
-% ylabel('Friction coefficient');
-% title('Dynamic tire friction');
-% legend();
+%% Plot
+figure();
+plot(decayCoefficients, tLap, "-o", LineWidth=2);
+xlabel("Decay coefficient")
+ylabel("Lap time (s)")
+grid on

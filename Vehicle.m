@@ -2,17 +2,19 @@ classdef Vehicle < handle
     % A vehicle that can perform simple steady-state manouvres.
     properties
         mCarTotal               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        rWeightBalF             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        rWeightBalF             double {mustBeScalarOrEmpty, mustBeFinite, mustBeInRange(rWeightBalF, 0, 1)}
         wheelbase               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        trackWidth              double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         hCoG                    double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        rAeroBalF               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        aeroDragFactor          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        aeroDownforceFactor     double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        rAeroBalF               double {mustBeScalarOrEmpty, mustBeFinite, mustBeInRange(rAeroBalF, 0, 1)}
+        rMechBalF               double {mustBeScalarOrEmpty, mustBeFinite, mustBeInRange(rMechBalF, 0, 1)}
+        aeroDragFactor          double {mustBeScalarOrEmpty, mustBeFinite, mustBeNonnegative}
+        aeroDownforceFactor     double {mustBeScalarOrEmpty, mustBeFinite, mustBeNonnegative}
         rFinalDrive             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         rTransmissionRatio      double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        eTransmission           double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        nMotorMapLookup         (:,1) double % radians per second
-        MMotorMapLookup         (:,1) double
+        eTransmission           double {mustBeScalarOrEmpty, mustBeFinite, mustBeInRange(eTransmission, 0.01, 1)}
+        nMotorMapLookup         (:,1) double {mustBeFinite, mustBeNonnegative} % radians per second
+        MMotorMapLookup         (:,1) double {mustBeFinite, mustBeNonnegative}
         tire                    LoadDependentTireModel
     end
 
@@ -77,10 +79,25 @@ classdef Vehicle < handle
             gLong = 0;
 
             % Compute maximum achievable speed for this radius
-            vCar = this.solveMaxSpeedInCorner(cornerRadius);
+            if this.tire.tyreDecayCoeff == 0
+                % Constant mu, so can use more basic equation.
+                % Calculate separate vCar limit for front and rear axle, then take the minimum of the two.
+                massFront = this.mCarTotal .* this.rWeightBalF;
+                massRear = this.mCarTotal .* (1 - this.rWeightBalF);
+                downforceFactorFront = this.aeroDownforceFactor .* this.rAeroBalF;
+                downforceFactorRear = this.aeroDownforceFactor .* (1 - this.rAeroBalF);
+                
+                vCarLimitFront = this.calculateAxleCornerSpeedLimit_constantMu(massFront, downforceFactorFront, cornerRadius);
+                vCarLimitRear = this.calculateAxleCornerSpeedLimit_constantMu(massRear, downforceFactorRear, cornerRadius);
+                vCar = min(vCarLimitFront, vCarLimitRear);
+            else
+                % Load dependent tyre requires iterative approach
+                vCar = this.solveMaxSpeedInCorner(cornerRadius);
+            end
             gLat = this.calculate_gLat(vCar, cornerRadius);
-
+            
             state = VehicleStates(sRun);
+            state.logConstant("rCorner", cornerRadius);
             state.logConstant("vCar", vCar);
             state.logConstant("gLong", gLong);
             state.logConstant("gLat", gLat);
@@ -194,15 +211,6 @@ classdef Vehicle < handle
             state.log("LPUAR", LPUAR, indices);
             state.log("muDynamicR", muDynamicRear, indices);
         end
-        
-        
-        function testNewtonRaphson(this)
-            fcn = @(x) x - 5;
-            x0 = 2;
-            out = this.newtonRoot(fcn, x0);
-            disp("Correct ans = 5")
-            fprintf("Result = %.3f\n", out);
-        end
     end
 
     %% Private implementation
@@ -213,23 +221,16 @@ classdef Vehicle < handle
             g = 9.81;
             m = this.mCarTotal;
             wb = this.wheelbase;
-            a = this.rWeightBalF * wb;      % distance CoG -> front axle TODO: this should be (1 - this.rWeightBalF)
+            a = (1 - this.rWeightBalF) * wb;      % distance CoG -> front axle
             b = wb - a;                      % distance CoG -> rear axle
 
             % Define residual functions for each axle being the limiting one
-            resFront = @(v) this.corneringResidual(v, R, m, wb, b, 'front');
-            resRear  = @(v) this.corneringResidual(v, R, m, wb, a, 'rear');
-
-            % Initial guess using the old formula (constant peak mu, no load dependence)
+            resFront = @(v) this.corneringResidual(v, R,'front');
+            resRear  = @(v) this.corneringResidual(v, R,'rear');
+            
+            % Initial guess using the simplified formula (point mass, constant peak mu, no load dependence)
             muPeak = this.tire.muTyreLat_peak;
             vGuess = sqrt( (muPeak * R * m * g) / (m - muPeak * R * this.aeroDownforceFactor) );
-            % TODO: Remove this fallback (which I'm assuming is for max vCar without downforce for point mass).
-            % If the vGuess has a complex value, it should error out, not take the real component and silently
-            % continue
-            if imag(vGuess) ~= 0 || ~isfinite(vGuess)
-                vGuess = sqrt(R * muPeak * g);   % fallback
-            end
-            vGuess = max(real(vGuess), 0.1);
 
             % Solve for front-limited and rear-limited speeds using Newton-Raphson
             vFront = this.newtonRoot(resFront, vGuess);
@@ -239,35 +240,63 @@ classdef Vehicle < handle
             vMax = min(vFront, vRear);
         end
 
-        function r = corneringResidual(this, v, R, m, wb, dist, axle)
+        
+        function a_y_residual = corneringResidual(this, vCar_guess, corner_radius, axle)
             % Residual for the equation: a_y_req - a_y_limit(axle) = 0
             % dist = distance from CoG to the *other* axle (a for rear limit, b for front limit)
-            a_y_req = v^2 / R;
+            a_y_req = vCar_guess.^2 ./ corner_radius;
 
             % Compute vertical loads (longitudinal g=0)
-            [Fz_axle, ~] = this.calculateAxleLoads(v, 0);
+            [FzFront, FzRear] = this.calculateAxleLoads(vCar_guess, 0);
             if strcmp(axle, 'front')
-                Fz = Fz_axle;   % front axle total load
+                Fz_axle = FzFront;   % front axle total load
+                axle_load_transfer_fraction =  this.rMechBalF;
+                axle_mass = this.mCarTotal .* this.rWeightBalF;
             else
-                [~, Fz] = this.calculateAxleLoads(v, 0);  % rear axle total load
+                Fz_axle = FzRear;  % rear axle total load
+                axle_load_transfer_fraction = 1 - this.rMechBalF;
+                axle_mass = this.mCarTotal .* (1 - this.rWeightBalF);
             end
 
-            % Per-tire load (assuming equal left/right distribution)
-            % TODO: We are doing a roll rate sweep which changes load transfer distribution. We need to take into
-            % account the load transfer for it to have any effect. Cannot assume same Fz left & right
-            Fz_tire = Fz / 2;
+            % Calculate lateral load transfer for this specific axle
+            % Formula: delta_Fz = (m * a_y * h_CG / track) * roll_distribution
+            delta_Fz = (this.mCarTotal .* a_y_req .* this.hCoG ./ this.trackWidth) .* axle_load_transfer_fraction;
 
-            % Dynamic friction coefficient for lateral direction on this axle
-            mu_dyn = this.tire.calculate_tyrefrictioncoefficient(Fz_tire, 'lat', axle);
+            %  Calculate outer and inner tire loads
+            % Using max(..., 0) to prevent negative loads (inner tire lifting off)
+            Fz_outer = max((Fz_axle ./ 2) + delta_Fz, 0);
+            Fz_inner = max((Fz_axle ./ 2) - delta_Fz, 0);
 
-            % Maximum lateral acceleration allowed by this axle (bicycle model)
-            a_y_limit = (mu_dyn * Fz * wb) / (dist * m);
+            %  Calculate dynamic mu for each tire based on its specific load
+            mu_outer = this.tire.calculate_tyrefrictioncoefficient(Fz_outer, 'lat', axle);
+            mu_inner = this.tire.calculate_tyrefrictioncoefficient(Fz_inner, 'lat', axle);
 
-            r = a_y_req - a_y_limit;
+            %  Total maximum lateral force capable by this axle
+            Fy_max_axle = (mu_outer .* Fz_outer) + (mu_inner .* Fz_inner);
+
+            % Maximum vehicle lateral acceleration allowed by this axle limit
+            a_y_limit = Fy_max_axle ./ axle_mass;
+
+            a_y_residual = a_y_req - a_y_limit;
+        end
+    end
+    
+    
+    methods (Access = private, Static)
+        function tRun = calculate_tRun(sRun, vCar)
+            tRun = cumtrapz(sRun, 1 ./ vCar);
         end
 
-        function x = newtonRoot(this, fun, x0)
+
+        function gLat = calculate_gLat(vCar, radiusCorner)
+            gLat = (vCar .^ 2) ./ radiusCorner;
+        end
+        
+        
+        function x = newtonRoot(fun, x0)
             % Simple Newton-Raphson solver with numerical derivative
+            % fun: function handle for the objective function to solve, fun(x) = 0
+            % x0 : Initial guess for for the solution to the objective function.
             tol = 1e-6;
             maxIter = 30;
             x = x0;
@@ -290,17 +319,7 @@ classdef Vehicle < handle
                 x = x_new;
             end
             % Fallback to fzero if Newton fails
-            x = fzero(fun, [0.01, x0*10]);
-        end
-    end
-    methods (Access = private, Static)
-        function tRun = calculate_tRun(sRun, vCar)
-            tRun = cumtrapz(sRun, 1 ./ vCar);
-        end
-
-
-        function gLat = calculate_gLat(vCar, radiusCorner)
-            gLat = (vCar .^ 2) ./ radiusCorner;
+            % x = fzero(fun, [0.01, x0*10]);
         end
     end
 
@@ -392,6 +411,13 @@ classdef Vehicle < handle
             [muDynamicRear, ~]  = this.tire.calculate_tyrefrictioncoefficient(FzRear./2, 'long', 'rear');
             [~, ~, FDrag] = this.calculateAeroLoads(vCar);
             gLongBraking = (-(muDynamicFront.*FzFront + muDynamicRear.*FzRear) - FDrag) ./ this.mCarTotal;
+        end
+        
+        
+        function vCarLimit = calculateAxleCornerSpeedLimit_constantMu(this, axleMass, axleDownforceFactor, cornerRadius)
+            g = 9.81;
+            vCarLimit = sqrt( (this.tire.muTyreLat_peak .* cornerRadius .* axleMass .* g) ...
+                    ./ (axleMass - this.tire.muTyreLat_peak .* cornerRadius .* axleDownforceFactor) );
         end
     end
 end

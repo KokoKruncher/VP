@@ -3,6 +3,7 @@ classdef VehicleStates < matlab.mixin.Copyable
         loggedStates string = [
             "sRun";
             "tRun";
+            "rCorner"
             "vCar";
             "gLong";
             "gLat";
