@@ -125,6 +125,28 @@ classdef VehicleStates < matlab.mixin.Copyable
                 varargout{1} = this;
             end
         end
+        
+        
+        function bool = isEmpty(this)
+            arguments
+                this (1,1) VehicleStates
+            end
+            bool = isempty(this.result);
+        end
+        
+        
+        function varargout = debugPlots(this)
+            hFig = figure(Name="Lap debug plots.");
+            hAxes = axes(hFig);
+            scatter(hAxes, this.results.sRun, this.results.vCar);
+            grid(hAxes, "on");
+            xlabel(hAxes, "sRun (m)");
+            ylabel(hAxes, "vCar (m/s)");
+            
+            if nargout == 1
+                varargout{1} = hFig;
+            end
+        end
     end
 
     %% Private implementation
