@@ -23,7 +23,7 @@ Motor_torque_lookup = [0 2000 4000 6000 8000 10000 12000 14000 16000 18000; ...
     360 360 360 360 270 216 180 154 135 120]; % Motor torque lookup
 
 % Tyre model
-tyreDecayCoeff      = 3e-5;   % Tyre decay coefficient [-] 3e-5
+tyreDecayCoeff      = 0;   % Tyre decay coefficient [-] 3e-5
 TyreWidthFront      = 260;
 TyreWidthRear       = 380;
 R_tyre              = 340;    % Rear tyre rolling radius [mm]
@@ -31,7 +31,10 @@ mu_lon              = 1.30;   % Tyre friction coefficient [-], Braking & Acceler
 mu_lat              = 1.36;   % Tyre friction coefficient [-], Cornering
 
 % Circuit properties: 
-Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
+% Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
+% Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
+% Length_straight     = [742 405 368 53];     % Length of each straight [m]
+Radius_corner       = [50 15 35 140];        % Radius of each corner [m]
 Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
 Length_straight     = [742 405 368 53];     % Length of each straight [m]
 
@@ -113,12 +116,12 @@ end
 end
 
 %% Plot tire friction
-% figure('Name', 'Tire Friction Plot');
-% plot(lap.results.sRun, lap.results.muDynamicF, 'Color', '#f2b248', 'LineWidth', 1.5, 'DisplayName', 'Front');
-% hold on;
-% plot(lap.results.sRun, lap.results.muDynamicR, 'Color', '#7c4081', 'LineWidth', 1.5, 'DisplayName', 'Rear');
-% grid on;
-% xlabel('Distance (m)')
-% ylabel('Friction coefficient');
-% title('Dynamic tire friction');
-% legend();
+figure('Name', 'Tire Friction Plot');
+plot(lap.results.sRun, lap.results.muDynamicF, 'Color', '#f2b248', 'LineWidth', 1.5, 'DisplayName', 'Front');
+hold on;
+plot(lap.results.sRun, lap.results.muDynamicR, 'Color', '#7c4081', 'LineWidth', 1.5, 'DisplayName', 'Rear');
+grid on;
+xlabel('Distance (m)')
+ylabel('Friction coefficient');
+title('Dynamic tire friction');
+legend();

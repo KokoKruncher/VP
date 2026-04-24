@@ -87,13 +87,44 @@ classdef Vehicle < handle
                 downforceFactorFront = this.aeroDownforceFactor .* this.rAeroBalF;
                 downforceFactorRear = this.aeroDownforceFactor .* (1 - this.rAeroBalF);
                 
-                vCarLimitFront = this.calculateAxleCornerSpeedLimit_constantMu(massFront, downforceFactorFront, cornerRadius);
-                vCarLimitRear = this.calculateAxleCornerSpeedLimit_constantMu(massRear, downforceFactorRear, cornerRadius);
+                vCarLimitFront = this.calculateConstantMuAxleCornerSpeedLimit(massFront, downforceFactorFront, cornerRadius);
+                vCarLimitRear = this.calculateConstantMuAxleCornerSpeedLimit(massRear, downforceFactorRear, cornerRadius);
                 vCar = min(vCarLimitFront, vCarLimitRear);
             else
                 % Load dependent tyre requires iterative approach
                 vCar = this.solveMaxSpeedInCorner(cornerRadius);
             end
+            gLat = this.calculate_gLat(vCar, cornerRadius);
+            
+            state = VehicleStates(sRun);
+            state.logConstant("rCorner", cornerRadius);
+            state.logConstant("vCar", vCar);
+            state.logConstant("gLong", gLong);
+            state.logConstant("gLat", gLat);
+            this.backCalculateStates(state);
+
+            % Log dynamic friction coefficients (per axle, using per‑tire loads)
+            [muDynamicFront, LPUAF] = this.tire.calculate_tyrefrictioncoefficient(...
+                state.results.FzFront/2, 'lat', 'front');
+            [muDynamicRear, LPUAR]  = this.tire.calculate_tyrefrictioncoefficient(...
+                state.results.FzRear/2, 'lat', 'rear');
+            indices = 1:numel(sRun);
+            state.log("LPUAF", LPUAF, indices);
+            state.log("muDynamicF", muDynamicFront, indices);
+            state.log("LPUAR", LPUAR, indices);
+            state.log("muDynamicR", muDynamicRear, indices);
+        end
+        
+        
+        function state = driveSteadyStateCornerAtSpeed(this, sRun, cornerRadius, cornerSpeed)
+            arguments
+                this Vehicle
+                sRun
+                cornerRadius (1,1) double
+                cornerSpeed (1,1) double
+            end
+            gLong = 0;
+            vCar = cornerSpeed;
             gLat = this.calculate_gLat(vCar, cornerRadius);
             
             state = VehicleStates(sRun);
@@ -417,7 +448,7 @@ classdef Vehicle < handle
         end
         
         
-        function vCarLimit = calculateAxleCornerSpeedLimit_constantMu(this, axleMass, axleDownforceFactor, cornerRadius)
+        function vCarLimit = calculateConstantMuAxleCornerSpeedLimit(this, axleMass, axleDownforceFactor, cornerRadius)
             g = 9.81;
             vCarLimit = sqrt( (this.tire.muTyreLat_peak .* cornerRadius .* axleMass .* g) ...
                     ./ (axleMass - this.tire.muTyreLat_peak .* cornerRadius .* axleDownforceFactor) );

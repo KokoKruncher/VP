@@ -38,12 +38,18 @@ classdef SteadyStateLapSimulation < handle
     
     %% Private Implementation
     methods (Access = private)
-        function states = runSingleLap(this, vCarInitial)
-            % Calculate maximum corner speed.
-            cornerCount = numel(this.track.corners);
+        function [lap, straightStates, cornerStates] = runSingleLap(this, vCarInitial, args)
             straightCount = this.track.straightCount;
+            cornerCount = numel(this.track.corners);
+            
+            % Internal state objects.
+            straightStates_(straightCount) = VehicleStates();
+            cornerStates_(straightCount) = VehicleStates();
+            
+            % Initialise array to hold maximum corner speed for backtracking if braking zone not long enough.
+            maxCornerSpeed = inf(1, cornerCount);
+            
             iSegment = 0;
-            states = VehicleStates();
             while true
                 iSegment = iSegment + 1;
                 if iSegment > straightCount
@@ -51,7 +57,7 @@ classdef SteadyStateLapSimulation < handle
                 end
                 
                 if iSegment > 1
-                    vCarStartOfStraight = states.results.vCar(end);
+                    vCarStartOfStraight = straightStates_(iSegment - 1).results.vCar(end);
                 else
                     vCarStartOfStraight = vCarInitial;
                 end
@@ -59,7 +65,7 @@ classdef SteadyStateLapSimulation < handle
                 sRunStraight = 0 : this.distanceStep : this.track.straightLengths(iSegment);
                 forwardPass = this.vehicle.driveStraightLineAccel(sRunStraight, vCarStartOfStraight);
                 if iSegment > cornerCount
-                    states.append(forwardPass);
+                    straightStates_(iSegment) = forwardPass;
                     break
                 end
                 
@@ -70,20 +76,40 @@ classdef SteadyStateLapSimulation < handle
                 vCarEndOfStraight = corner.results.vCar(1);
                 
                 backwardsPass = this.vehicle.driveStraightLineBraking(sRunStraight, vCarEndOfStraight);
-                iStartBraking = find(forwardPass.results.vCar > backwardsPass.results.vCar, 1, "first");
-                if iStartBraking == 1
+                
+                if backwardsPass.results.vCar(1) < vCarStartOfStraight
                     % Previous corner too fast
                     % TODO: Handle previous corner too fast scenario.
                     error("Unhandled scenario: Previous corner too fast.")
-                elseif isempty(iStartBraking)
-                    % Previous corner too fast (next corner too fast)
-                    % TODO: Handle next corner too slow scenatio.
-                    error("Unhandled scenario: Next corner too slow.")
+                elseif forwardPass.results.vCar(end) < vCarEndOfStraight
+                    % Next corner is too fast, there is not enough straight to accelerate to the maximum corner speed.
+                    warning("Not enough straight to accelerate to maximum corner speed for next corner.")
+                    nextCornerSpeedLimit = forwardPass.results.vCar(end);
+                    corner = this.vehicle.driveSteadyStateCornerAtSpeed(sRunCorner, radiusCorner, nextCornerSpeedLimit);
+                    straightStates_(iSegment) = forwardPass;
+                    cornerStates_(iSegment) = corner;
+                else
+                    % Regular scenario
+                    iStartBraking = find(forwardPass.results.vCar > backwardsPass.results.vCar, 1, "first");
+                    forwardPass.crop(EndIndex=iStartBraking - 1);
+                    backwardsPass.crop(StartIndex=iStartBraking);
+                    straightStates_(iSegment) = forwardPass.append(backwardsPass);
+                    cornerStates_(iSegment) = corner;
                 end
-                
-                forwardPass.crop(EndIndex=iStartBraking - 1);
-                backwardsPass.crop(StartIndex=iStartBraking);
-                states.append(forwardPass).append(backwardsPass).append(corner);
+            end
+            
+            % These internal states need to be copied to be output as they are handle objects which get modified.
+            straightStates = straightStates_.copy();
+            cornerStates = cornerStates_.copy();
+            
+            % Assemble the full lap
+            lap = straightStates_(1);
+            for ii = 1:cornerCount
+                lap.append(cornerStates_(ii));
+                if ii + 1 > straightCount
+                    break
+                end
+                lap.append(straightStates_(ii + 1));
             end
         end
     end
