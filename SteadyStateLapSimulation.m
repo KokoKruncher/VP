@@ -26,7 +26,7 @@ classdef SteadyStateLapSimulation < handle
     %% Public interface
     methods
         function lap = run(this)
-            MAX_NUM_PUSH_LAP_RERUNS = 3;
+            MAX_NUM_PUSH_LAP_RERUNS = 10;
             VCAR_START_AND_END_OF_LAP_TOLERENCE = 0.01;
             
             tSimulationTotal = 0;
@@ -67,7 +67,7 @@ classdef SteadyStateLapSimulation < handle
     methods (Access = private)
         function [lap, tSimulation] = runSingleLap(this, vCarInitial)
             tic
-            MAX_NUM_BACKTRACK_RERUNS = 3;
+            MAX_NUM_BACKTRACK_RERUNS = 10;
             straightCount = this.track.straightCount;
             cornerCount = numel(this.track.corners);
             
@@ -204,7 +204,7 @@ classdef SteadyStateLapSimulation < handle
                 
                 if forwardPass.results.vCar(end) < vCarEndOfStraight
                     % Somehow we messed up the other scenario too???
-                    warning("Error while backtracking. Straight too short to accelerate to next corner speed. " + ...
+                    error("Error while backtracking. Straight too short to accelerate to next corner speed. " + ...
                         "Lap may not have converged!");
                 end
                 
@@ -226,8 +226,6 @@ classdef SteadyStateLapSimulation < handle
                     straights(iSegment) = forwardPass.append(backwardsPass);
                     corners(iSegment) = corner;
                 end
-                
-                
             end
         end
         
