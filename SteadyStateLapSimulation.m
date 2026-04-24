@@ -29,16 +29,18 @@ classdef SteadyStateLapSimulation < handle
             MAX_NUM_PUSH_LAP_RERUNS = 3;
             VCAR_START_AND_END_OF_LAP_TOLERENCE = 0.01;
             
+            tSimulationTotal = 0;
+            
             % Out lap to get speed at start-finish line.
             this.vehicle.initialise();
-            this.log("=== Running out lap. ===")
+            this.log("=== Running out lap ===")
             vCarInitialOutLap = 0;
-            lap = this.runSingleLap(vCarInitialOutLap);
+            [lap, tSimulation] = this.runSingleLap(vCarInitialOutLap);
+            tSimulationTotal = tSimulationTotal + tSimulation;
             
             % Push lap
             % TODO: Optimise further by considering whether only first corner needs to be rerun 
             % DELETE THIS
-            close all
             iPushLap = 0;
             while true
                 iPushLap = iPushLap + 1;
@@ -48,18 +50,23 @@ classdef SteadyStateLapSimulation < handle
                 end
                 vCarInitial = lap.results.vCar(end);
                 this.log(sprintf("=== Running push lap iteration %i ===", iPushLap), PrependNewlines=1);
-                lap = this.runSingleLap(vCarInitial);
+                [lap, tSimulation] = this.runSingleLap(vCarInitial);
+                tSimulationTotal = tSimulationTotal + tSimulation;
                 
                 if abs(lap.results.vCar(end) - lap.results.vCar(1)) < VCAR_START_AND_END_OF_LAP_TOLERENCE
                     break
                 end
             end
+            
+            this.log("Lap simulation finished.", PrependNewlines=1);
+            this.log(sprintf("Simulation time = %.2fs", tSimulationTotal));
         end
     end
     
     %% Private Implementation
     methods (Access = private)
-        function lap = runSingleLap(this, vCarInitial)
+        function [lap, tSimulation] = runSingleLap(this, vCarInitial)
+            tic
             MAX_NUM_BACKTRACK_RERUNS = 3;
             straightCount = this.track.straightCount;
             cornerCount = numel(this.track.corners);
@@ -136,7 +143,6 @@ classdef SteadyStateLapSimulation < handle
                     straights(iSegment) = forwardPass.append(backwardsPass);
                     corners(iSegment) = corner;
                 end
-                
             end
             
             % Backtrack
@@ -152,18 +158,6 @@ classdef SteadyStateLapSimulation < handle
                     break
                 end
                 this.log(sprintf("Backtracking, iteration %i", backtrackRerunCount));
-                
-                % DELETE THIS
-                lap = straights(1).copy();
-                for ii = 1:cornerCount
-                    lap.append(corners(ii));
-                    if ii + 1 > straightCount
-                        break
-                    end
-                    lap.append(straights(ii + 1));
-                end
-                lap.debugPlots();
-                
                 [straights, corners, isBacktrackNeeded, maxCornerSpeed] = ...
                     this.backtrack(straights, corners, isBacktrackNeeded, maxCornerSpeed);
             end
@@ -178,8 +172,7 @@ classdef SteadyStateLapSimulation < handle
                 lap.append(straights(ii + 1));
             end
             
-            % DELETE THIS
-            lap.debugPlots();
+            tSimulation = toc;
         end
         
         

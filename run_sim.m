@@ -89,7 +89,7 @@ lap = steadyStateSim.run();
 %% Print outputs
 cornerSpeeds_kph = unique(lap.results.vCar(lap.results.gLong == 0), "stable") .* 3.6;
 
-fprintf("Lap time = %.3fs\n", lap.results.tRun(end));
+fprintf("\nLap time = %.3fs\n", lap.results.tRun(end));
 fprintf("Corner speeds:\n");
 fprintf("%2i: %3.2f kph\n", [(1:numel(cornerSpeeds_kph)).', cornerSpeeds_kph].');
 
