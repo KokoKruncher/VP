@@ -40,7 +40,7 @@ classdef SteadyStateLapSimulation < handle
             
             % Push lap
             % TODO: Optimise further by considering whether only first corner needs to be rerun 
-            % DELETE THIS
+            % Run push lap iterations with the constraint that vCar(end) == vCar(1) due to being a periodic circuit.
             iPushLap = 0;
             while true
                 iPushLap = iPushLap + 1;
