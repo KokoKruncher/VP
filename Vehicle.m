@@ -254,9 +254,9 @@ classdef Vehicle < handle
             % using load-dependent lateral friction limits on front and rear axles.
             g = 9.81;
             m = this.mCarTotal;
-            wb = this.wheelbase;
-            a = (1 - this.rWeightBalF) * wb;      % distance CoG -> front axle
-            b = wb - a;                      % distance CoG -> rear axle
+            % wb = this.wheelbase;
+            % a = (1 - this.rWeightBalF) * wb;      % distance CoG -> front axle
+            % b = wb - a;                      % distance CoG -> rear axle
 
             % Define residual functions for each axle being the limiting one
             resFront = @(v) this.corneringResidual(v, R,'front');
