@@ -10,6 +10,49 @@ kWheelARBRSweep = linspace(0, 600, 7);
 [kWheelARBFSweep, kWheelARBRSweep] = meshgrid(kWheelARBFSweep, kWheelARBRSweep);
 LLTDSweep = nan(size(kWheelARBFSweep));
 
+%% Select track
+% Circuit properties: Default test track
+% Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
+% Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
+% Length_straight     = [742 405 368 53];     % Length of each straight [m]
+
+
+
+% Circuit properties: Sao Paulo ePrix (11 Corners, 12 Straights)
+% Radius_corner   = [18, 18, 12, 25, 22, 25, 14, 20, 60, 15, 18];       
+% Angle_corner    = [90, 90, 180, 45, 90, 45, 140, 80, 25, 90, 90];     
+% Length_straight = [650, 80, 80, 600, 80, 80, 500, 120, 350, 80, 80];
+
+
+
+% Formula E - Berlin Tempelhof Circuit Profile
+% 1: Hairpin Left, 2-3: Fast kinks, 4: Left 90, 5: Right 90, 
+% 6: Tight Left, 7-8: Kinks, 9: Hairpin Right, 10: Sweeping Right
+% Radius of each corner [m]
+% Radius_corner = [15,60,55,20,25,15,80,80,12,35];
+% 
+% % Angle of each corner [deg] (Deflection angle)
+% Angle_corner = [170,30,45,90,90,140,20,20,180,90];
+% 
+% % Length of straight leading into the corner [m]
+% Length_straight = [450,50,50,150,80,120,400,40,150,100];
+
+
+
+% % Silverstone GP Circuit - Complete Track Profile
+% % 1: Abbey, 2: Farm, 3: Village, 4: Loop, 5: Aintree, 6: Brooklands, 7: Luffield, 
+% % 8: Woodcote, 9: Copse, 10-14: Maggotts/Becketts/Chapel, 15: Stowe, 16: Vale, 17-18: Club
+% 
+% % Radius of each corner [m]
+% Radius_corner = [120,160,35,18,70,65,45,180,110,140,90,60,45,100,105,30,55,130];
+% 
+% % Angle of each corner [deg]
+% Angle_corner = [45,30,100,160,40,105,195,25,80,35,45,75,95,30,115,100,60,40];
+% 
+% % Length of straight leading into the corner [m]
+% Length_straight = [296,120,150,60,210,550,80,150,420,450,50,40,35,60,770,420,40,120];
+
+%% Baseline parameters
 ParametersVersion = '2025-2026: v1';
 
 % Vehicle parameters:
@@ -45,11 +88,6 @@ mu_lon              = 1.30;   % Tyre friction coefficient [-], Braking & Acceler
 mu_lat              = 1.36;   % Tyre friction coefficient [-], Cornering
 kTyreF              = 210;    % Front tyre spring rate [N/mm]
 kTyreR              = 245;    % Rear tyre spring rate [N/mm]
-
-% Circuit properties: 
-Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
-Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
-Length_straight     = [742 405 368 53];     % Length of each straight [m]
 
 %Simulation parameters
 Delta_S             = 0.1;   % Calculation step size interval [m]
