@@ -447,6 +447,13 @@ classdef Vehicle < handle
 
             % Motor only supplies power in traction, no regen considered.
             MMotor(MMotor < 0) = 0;
+            
+            % Load transfer and roll angles
+            [loadTransferF, loadTransferR, rollAngle] = this.calculateLoadTransfer(state.results.gLat);
+            LLTD = loadTransferF ./ (loadTransferF + loadTransferR);
+            isStraight = state.results.gLat == 0;
+            LLTD(isStraight) = nan;
+            rollAngle(isStraight) = 0;
 
             indices = 1:numel(tRun);
             state.log("tRun", tRun, indices);
@@ -456,6 +463,9 @@ classdef Vehicle < handle
             state.log("FLiftF", FLiftF, indices);
             state.log("FLiftR", FLiftR, indices);
             state.log("FDrag", FDrag, indices);
+            state.log("LLTD", LLTD, indices);
+            state.log("aRoll", rollAngle, indices);
+            
         end
 
 

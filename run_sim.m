@@ -45,21 +45,6 @@ Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
 Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
 Length_straight     = [742 405 368 53];     % Length of each straight [m]
 
-% Accel too short
-% Radius_corner       = [50 15 35 140];        % Radius of each corner [m]
-% Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
-% Length_straight     = [742 405 368 53];     % Length of each straight [m]
-
-% Brake too short
-% Radius_corner       = [100 15 35 70];        % Radius of each corner [m]
-% Angle_corner        = [45 151 38 81];       % Angle of each corner [deg]
-% Length_straight     = [742 20 368 53];     % Length of each straight [m]
-
-% Brake too short more than once
-% Radius_corner       = [100 15 35 200];        % Radius of each corner [m]
-% Angle_corner        = [45 151 38 40];       % Angle of each corner [deg]
-% Length_straight     = [5 20 368 53];     % Length of each straight [m]
-
 %Simulation parameters
 Delta_S             = 0.1;   % Calculation step size interval [m]
 
@@ -174,9 +159,9 @@ function varargout = plotResults(lap)
 arguments
     lap (1,1) VehicleStates
 end
-PARAMETERS = ["vCar", "gLong", "gLat"];
-CONVERSION_FACTORS = [3.6, 1/9.81, 1/9.81];
-UNITS = ["kph", "g", "g"];
+PARAMETERS = ["vCar", "gLong", "gLat", "LLTD", "aRoll"];
+CONVERSION_FACTORS = [3.6, 1/9.81, 1/9.81, 100, 180./pi];
+UNITS = ["kph", "g", "g", "%", "deg"];
 
 parameterCount = numel(PARAMETERS);
 hFig = figure(Visible="off");
