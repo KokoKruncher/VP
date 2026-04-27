@@ -2,31 +2,26 @@ classdef LoadDependentTireModel < handle
 
     % Tyre model
     properties
-        tyreDecayCoeff          double {mustBeScalarOrEmpty, mustBeFinite, mustBeNonnegative}
-        TyreWidthFront          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        TyreWidthRear           double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        radiusTyreRollingRear   double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-
-        muTyreLong_peak         double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
-        muTyreLat_peak          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        decayCoeff          double {mustBeScalarOrEmpty, mustBeFinite, mustBeNonnegative}
+        width               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        rollingRadius       double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        muTyreLong_peak     double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        muTyreLat_peak      double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        kSpring             double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
     end
 
     methods
-        function [muDynamic, LPUA] = calculate_tyrefrictioncoefficient(this, Fz, type, axle)
-            if strcmp(axle, 'front')
-                TyreWidth = this.TyreWidthFront;
-            else
-                TyreWidth = this.TyreWidthRear;
-            end
-
+        function [muDynamic, LPUA] = calculate_tyrefrictioncoefficient(this, Fz, type)
             if strcmp(type, 'long')
                 mu_peak = this.muTyreLong_peak;
-            else
+            elseif strcmp(type, 'lat')
                 mu_peak = this.muTyreLat_peak;
+            else
+                error("Enter either 'lat' or 'long' as type.")
             end
 
-            LPUA = Fz./(TyreWidth.*this.radiusTyreRollingRear.*pi);
-            muDynamic = mu_peak - (this.tyreDecayCoeff.*mu_peak.*LPUA);
+            LPUA = Fz./(this.width.*this.rollingRadius.*pi);
+            muDynamic = mu_peak - (this.decayCoeff.*mu_peak.*LPUA);
             
            % Minimum mu is zero
            muDynamic(muDynamic < 0) = 0;
