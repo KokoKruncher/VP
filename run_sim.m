@@ -31,9 +31,24 @@ mu_lon              = 1.30;   % Tyre friction coefficient [-], Braking & Acceler
 mu_lat              = 1.36;   % Tyre friction coefficient [-], Cornering
 
 % Circuit properties: 
-Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
-Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
-Length_straight     = [742 405 368 53];     % Length of each straight [m]
+% Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
+% Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
+% Length_straight     = [742 405 368 53];     % Length of each straight [m]
+
+% Accel too short
+% Radius_corner       = [50 15 35 140];        % Radius of each corner [m]
+% Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
+% Length_straight     = [742 405 368 53];     % Length of each straight [m]
+
+% Brake too short
+% Radius_corner       = [100 15 35 70];        % Radius of each corner [m]
+% Angle_corner        = [45 151 38 81];       % Angle of each corner [deg]
+% Length_straight     = [742 20 368 53];     % Length of each straight [m]
+
+% Brake too short more than once
+Radius_corner       = [100 15 35 200];        % Radius of each corner [m]
+Angle_corner        = [45 151 38 40];       % Angle of each corner [deg]
+Length_straight     = [5 20 368 53];     % Length of each straight [m]
 
 %Simulation parameters
 Delta_S             = 0.1;   % Calculation step size interval [m]

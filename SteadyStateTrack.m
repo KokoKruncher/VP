@@ -1,10 +1,8 @@
 classdef SteadyStateTrack < handle
     % Defines a track which is a sequence of straight -> steady-state corner -> straight -> steady-state corner -> ...
     %
-    % The track starts on the first straight and can end on either a corner or on a straight. If the number of straights
-    % provided is equal to the number of corners, then the track ends on the last corner. If the number of straights
-    % provided is one more than the number of corners, then it ends on the last straight.
-    properties
+    % The track starts on the first straight and ends at a corner. The number of straights and corners must be equal
+    properties (SetAccess = private)
         corners (:,1) SteadyStateCorner
         straightLengths (:,1) double
         distanceStep (1,1) double = nan
@@ -32,9 +30,9 @@ classdef SteadyStateTrack < handle
             obj.corners = SteadyStateCorner(cornerRadii, cornerAngles);
             nCorners = numel(obj.corners);
             nStraights = numel(straightLengths);
-            if nStraights ~= nCorners && (nStraights - nCorners) ~= 1
+            if nStraights ~= nCorners
                 error("Invalid number of straights for the number of corners. " + ...
-                    "The number of straights must be equal to or 1 more than the number of corners.")
+                    "The number of straights must be equal to the number of corners.")
             end
             obj.straightLengths = straightLengths;
             obj.distanceStep = args.DistanceStep;
@@ -69,7 +67,10 @@ classdef SteadyStateTrack < handle
                     cornerSegment = [];
                 end
                 sLap = [sLap, straightSegment, cornerSegment]; %#ok<*AGROW>
-                radius = [radius, Inf(size(straightSegment)), repmat(this.corners(ii).radius, size(cornerSegment))];
+                radius = [radius, Inf(size(straightSegment))];
+                if ii <= cornerCount
+                    radius = [radius, repmat(this.corners(ii).radius, size(cornerSegment))];
+                end
                 isCorner = [isCorner, false(size(straightSegment)), true(size(cornerSegment))];
             end
             this.sLap = sLap;
