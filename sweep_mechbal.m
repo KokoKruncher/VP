@@ -152,9 +152,9 @@ for ii = 1:sweepCount
 end
 
 %% Fit
-fitObj = polyfit(LLTDSweep(:) * 100, tLap(:), 1);
-sensitivity_ms_per_percent = fitObj(1) * 1000;
-fprintf("\nLLTD sensitivity (ms/%%) = %.2f\n", sensitivity_ms_per_percent);
+% fitObj = polyfit(LLTDSweep(:) * 100, tLap(:), 1);
+% sensitivity_ms_per_percent = fitObj(1) * 1000;
+% fprintf("\nLLTD sensitivity (ms/%%) = %.2f\n", sensitivity_ms_per_percent);
 
 %% Plot
 figure();

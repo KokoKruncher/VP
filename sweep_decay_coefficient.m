@@ -110,6 +110,7 @@ vehicle.tireR                   = tireR;
 sweepCount = numel(decayCoefficients);
 tLap = nan(1, sweepCount);
 for ii = 1:sweepCount
+    fprintf("Running lap %i/%i\n", ii, sweepCount);
     tireF.decayCoeff = decayCoefficients(ii);
     tireR.decayCoeff = decayCoefficients(ii);
     vehicle.tireF = tireF;
