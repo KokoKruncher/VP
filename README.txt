@@ -7,7 +7,7 @@ There are 4 ways to run the simulator:
 1. Run the script "run_sim.m".
    This is the standard way. The vehicle parameters can be modified in the first section, and the standard plots will be displayed.
 
-2. Run the script "run_sim_GUI_v5.m".
+2. Run the script "run_sim_GUI_v7.m".
    This will open up a user interface where vehicle parameters can be entered and a lap can be simulated. Open the "Documentation" tab in the GUI for further instructions.
    
 3. Run one of the provided parameter sweep scripts
