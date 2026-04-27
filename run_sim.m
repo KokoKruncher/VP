@@ -127,34 +127,7 @@ plotResults(lap);
 % title('Dynamic tire friction');
 % legend();
 
-%% Debug
-% vCarBraking = lap.results.vCar(lap.results.gLong < 0);
-% gLongBraking = lap.results.gLong(lap.results.gLong < 0);
-% 
-% vCarBrakingTheo = min(vCarBraking) : 0.1 : max(vCarBraking);
-% gLongBrakingTheo = calcTractionLimitedBraking(vehicle, vCarBrakingTheo);
-% 
-% figure();
-% hold on
-% plot(vCarBrakingTheo, gLongBrakingTheo, "--")
-% scatter(vCarBraking, gLongBraking);
-% grid on
-% hold off
-% xlabel("vCar (m/s)")
-% ylabel("gLong (m/s^2)")
-
 %% Functions
-function gLong = calcTractionLimitedBraking(vehicle, vCar)
-downforce = vehicle.aeroDownforceFactor .* vCar.^2;
-drag = vehicle.aeroDragFactor .* vCar.^2;
-
-FzTotal = vehicle.mCarTotal .* 9.81 + downforce;
-mu = vehicle.tire.muTyreLong_peak;
-FxTotal = -(mu .* FzTotal) - drag;
-gLong = FxTotal ./ vehicle.mCarTotal;
-end
-
-
 function varargout = plotResults(lap)
 arguments
     lap (1,1) VehicleStates
