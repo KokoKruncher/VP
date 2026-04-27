@@ -9,6 +9,7 @@ classdef VehicleStates < matlab.mixin.Copyable
             "gLat";
             "gLongTractionLimited";
             "gLongPowerLimited";
+            "LLTDF";
             "MMotor";
             "FzFront";
             "FzRear"
