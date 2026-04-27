@@ -1,6 +1,7 @@
 %% ENGR6014: Motorsport Vehicle Performance 2025-2026
 % Assignment 2 - Steady-State Laptime Simulator Development (Vehicle Parameters)
-% Version: 1.1
+% Version: Baseline
+% This version has a load-dependent tyre, but you can represent a constant mu tyre by setting decay coeffient to zero.
 
 clear; clc; close all;
 
@@ -23,7 +24,7 @@ Motor_torque_lookup = [0 2000 4000 6000 8000 10000 12000 14000 16000 18000; ...
     360 360 360 360 270 216 180 154 135 120]; % Motor torque lookup
 
 % Tyre model
-tyreDecayCoeff      = 0;   % Tyre decay coefficient [-] 3e-5
+tyreDecayCoeff      = 0;   % Tyre decay coefficient [-]
 TyreWidthFront      = 260;
 TyreWidthRear       = 380;
 R_tyre              = 340;    % Rear tyre rolling radius [mm]
@@ -34,21 +35,6 @@ mu_lat              = 1.36;   % Tyre friction coefficient [-], Cornering
 Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
 Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
 Length_straight     = [742 405 368 53];     % Length of each straight [m]
-
-% Accel too short
-% Radius_corner       = [50 15 35 140];        % Radius of each corner [m]
-% Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
-% Length_straight     = [742 405 368 53];     % Length of each straight [m]
-
-% Brake too short
-% Radius_corner       = [100 15 35 70];        % Radius of each corner [m]
-% Angle_corner        = [45 151 38 81];       % Angle of each corner [deg]
-% Length_straight     = [742 20 368 53];     % Length of each straight [m]
-
-% Brake too short more than once
-% Radius_corner       = [100 15 35 200];        % Radius of each corner [m]
-% Angle_corner        = [45 151 38 40];       % Angle of each corner [deg]
-% Length_straight     = [5 20 368 53];     % Length of each straight [m]
 
 %Simulation parameters
 Delta_S             = 0.1;   % Calculation step size interval [m]
@@ -107,34 +93,7 @@ plotResults(lap);
 % title('Dynamic tire friction');
 % legend();
 
-%% Debug
-vCarBraking = lap.results.vCar(lap.results.gLong < 0);
-gLongBraking = lap.results.gLong(lap.results.gLong < 0);
-
-vCarBrakingTheo = min(vCarBraking) : 0.1 : max(vCarBraking);
-gLongBrakingTheo = calcTractionLimitedBraking(vehicle, vCarBrakingTheo);
-
-figure();
-hold on
-plot(vCarBrakingTheo, gLongBrakingTheo, "--")
-scatter(vCarBraking, gLongBraking);
-grid on
-hold off
-xlabel("vCar (m/s)")
-ylabel("gLong (m/s^2)")
-
 %% Functions
-function gLong = calcTractionLimitedBraking(vehicle, vCar)
-downforce = vehicle.aeroDownforceFactor .* vCar.^2;
-drag = vehicle.aeroDragFactor .* vCar.^2;
-
-FzTotal = vehicle.mCarTotal .* 9.81 + downforce;
-mu = vehicle.tire.muTyreLong_peak;
-FxTotal = -(mu .* FzTotal) - drag;
-gLong = FxTotal ./ vehicle.mCarTotal;
-end
-
-
 function varargout = plotResults(lap)
 arguments
     lap (1,1) VehicleStates
