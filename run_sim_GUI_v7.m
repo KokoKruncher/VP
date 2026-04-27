@@ -8,7 +8,7 @@ clear; clc; close all;
 
 screensize = get(0, 'ScreenSize');
 WindowWidth = 900;
-WindowHeight = 800;
+WindowHeight = 1100;
 leftpos = (screensize(3) - WindowWidth) / 2;
 bottompos = (screensize(4) - WindowHeight) / 2;
 
@@ -16,7 +16,7 @@ Window = uifigure('Name', 'Lap Time Simulator', 'NumberTitle', 'off', 'Position'
 
 % Column for the vehicle Parameters
 
-uilabel(Window, 'text', 'Vehicle Parameters', 'Position', [10 780 200 25], 'FontSize', 15, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
+uilabel(Window, 'text', 'Vehicle Parameters', 'Position', [10 1080 200 25], 'FontSize', 15, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
 
 vehicle_data = {'Vehicle Mass', 'Weight Dist Front', 'Wheelbase', 'Track Width F', 'Track Width R', 'CG Height', 'Roll Centre F', 'Roll Centre R', 'K Spring F', 'K Spring R', 'Motion Ratio F', 'Motion Ratio R', 'ARB Wheel Rate F', 'ARB Wheel Rate R','Aero Balance front', 'Aero Drag Factor', 'Aero Downforce factor', 'Final drive ratio', 'Gear Ratio', 'Final driveline efficiency', 'Motor RPM', 'Motor Torque'};
 
@@ -31,7 +31,7 @@ Ftyre_input_box = gobjects(n, 1);
 Rtyre_input_box = gobjects(n, 1);
 
 for i = 1:n
-    y = 750 - (i-1)*28;
+    y = 1050 - (i-1)*28;
     uilabel(Window, 'text', vehicle_data{i}, 'Position', [10,y,175,20], 'FontSize', 12, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
     input_box(i) = uieditfield(Window, 'text', 'Value', default_values{i}, 'Editable', 'on', 'Position', [190,y+5,75,20], 'FontSize', 12, 'BackgroundColor', 'white', 'FontColor', 'black');
     uilabel(Window, 'text',  value_units{i}, 'Position', [270,y,60,20], 'FontSize', 12, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
@@ -39,7 +39,7 @@ end
 
 % Circuit parameters: 
 
-uilabel(Window, 'text', 'Track Parameters', 'Position', [350 780 200 25], 'FontSize', 15, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
+uilabel(Window, 'text', 'Track Parameters', 'Position', [350 1080 200 25], 'FontSize', 15, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
 
 track_data = {'Corner Radius', 'Corner Angle', 'Length Straight'};
 
@@ -50,7 +50,7 @@ track_units = {'m', 'Deg', 'm'};
 l = length(track_data);
 
 for b = 1:l
-    y = 750 - (b-1)*28;
+    y = 1050 - (b-1)*28;
     uilabel(Window, 'text', track_data{b}, 'Position', [350 y 200 25], 'FontSize', 12, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
     track_input_box(b) = uieditfield(Window, 'Text', 'Value', track_default_values{b}, 'Position', [530,y+5,125,20], 'FontSize', 12, 'BackgroundColor', 'white', 'FontColor', 'black');
     uilabel(Window, 'text', track_units{b}, 'Position', [660,y,30,20], 'FontSize', 12, 'HorizontalAlignment', 'left', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
@@ -58,7 +58,7 @@ end
 
 % Tyre Parameters:
 
-y0 = 750 - (i-1)*28;
+y0 = 1050 - (i-1)*28;
 yd = y0 - 35;
 
 uilabel(Window, 'text', 'Front Tyre Parameters', 'Position', [10 yd 200 25], 'FontSize', 15, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
@@ -110,7 +110,7 @@ parameterCount = 3;
 parameterCount2 = 1;
 parameterCount3 = 2;
 
-tabVis = uitabgroup(Window, 'Position', [350 30 490 650]);
+tabVis = uitabgroup(Window, 'Position', [350 330 490 650]);
 
 tab1 = uitab(tabVis, 'Title', 'Lap Time');
 tab2 = uitab(tabVis, 'Title', 'Tyre Friction');
@@ -130,18 +130,18 @@ end
 
 for iii = 1:parameterCount3 
     axBottom = 10 + (parameterCount3 - iii) * (axHeight + 20); 
-    hAxes_LoadTrans(iii) = uiaxes(tab3, 'Position', [10, axBottom, axWidth, axHeight]); 
+    hAxes_LoadTrans(iii) = uiaxes(tab3, 'Position', [10, axBottom + 200, axWidth, axHeight]); 
 end
 
 hAxes_tyre_fric(1) = uiaxes(tab2, 'Position', [10, 300, axWidth, 300]);
 
 % Control buttons
 
-uibutton(Window, 'Text', 'START', 'Position', [720,740,120,35], 'FontSize', 10, 'FontWeight', 'bold', 'BackgroundColor', [0.2 0.6 0.2], 'FontColor', 'white', 'ButtonPushedFcn', @(src,evt) calculate(src, evt, input_box, track_input_box, Ftyre_input_box, Rtyre_input_box, Delta_S, hAxes_laptime, hAxes_tyre_fric, hAxes_LoadTrans, lapTime_label));
+uibutton(Window, 'Text', 'START', 'Position', [720,1040,120,35], 'FontSize', 10, 'FontWeight', 'bold', 'BackgroundColor', [0.2 0.6 0.2], 'FontColor', 'white', 'ButtonPushedFcn', @(src,evt) calculate(src, evt, input_box, track_input_box, Ftyre_input_box, Rtyre_input_box, Delta_S, hAxes_laptime, hAxes_tyre_fric, hAxes_LoadTrans, lapTime_label));
 
-uibutton(Window, 'Text', 'RESET', 'Position', [720,700,120,35], 'FontSize', 10, 'BackgroundColor', [0.7 0.2 0.2], 'FontColor', 'white', 'ButtonPushedFcn', @(src,evt) reset(src, evt, n, l, s, w, parameterCount, input_box, track_input_box, Ftyre_input_box, Rtyre_input_box, default_values, track_default_values, Ftyre_default_values, Rtyre_default_values, hAxes_laptime, hAxes_tyre_fric, lapTime_label));
+uibutton(Window, 'Text', 'RESET', 'Position', [720,1000,120,35], 'FontSize', 10, 'BackgroundColor', [0.7 0.2 0.2], 'FontColor', 'white', 'ButtonPushedFcn', @(src,evt) reset(src, evt, n, l, s, w, parameterCount, input_box, track_input_box, Ftyre_input_box, Rtyre_input_box, default_values, track_default_values, Ftyre_default_values, Rtyre_default_values, hAxes_laptime, hAxes_tyre_fric, lapTime_label, hAxes_LoadTrans));
 
-function reset(~,~, n, l, s, w, parameterCount, input_box, track_input_box, Ftyre_input_box, Rtyre_input_box, default_values, track_default_values, Ftyre_default_values, Rtyre_default_values, hAxes_laptime, hAxes_tyre_fric, lapTime_label)
+function reset(~,~, n, l, s, w, parameterCount, input_box, track_input_box, Ftyre_input_box, Rtyre_input_box, default_values, track_default_values, Ftyre_default_values, Rtyre_default_values, hAxes_laptime, hAxes_tyre_fric, lapTime_label, hAxes_LoadTrans)
     for k = 1:n
         input_box(k).Value = default_values{k};
     end
@@ -158,6 +158,8 @@ function reset(~,~, n, l, s, w, parameterCount, input_box, track_input_box, Ftyr
         cla(hAxes_laptime(ii), 'reset');
     end
     cla(hAxes_tyre_fric(1), 'reset');
+    cla(hAxes_LoadTrans(1), 'reset');
+    cla(hAxes_LoadTrans(2), 'reset');
     lapTime_label.Text = sprintf('Lap time: ');
 end
 
@@ -277,6 +279,9 @@ if nargout > 1
 end
 
 cla(hAxes_tyre_fric(1), 'reset');
+cla(hAxes_LoadTrans(1), 'reset');
+cla(hAxes_LoadTrans(2), 'reset');
+
 hAxes2 = hAxes_tyre_fric(1); 
 plotDataF = lap.results.muDynamicF;
 plotDataR = lap.results.muDynamicR;
@@ -290,6 +295,21 @@ ylabel(hAxes2, 'Friction Coefficient');
 title(hAxes2, 'Dynamic Tyre Friction');
 legend(hAxes2);
 
+hAxes3 = hAxes_LoadTrans(1);
+hAxes4 = hAxes_LoadTrans(2);
+plotLLTD = lap.results.LLTD * 100;
+plotaRoll = lap.results.aRoll * (180/pi());
+plot(hAxes3, lap.results.sRun, plotLLTD, 'Color', '#f2b248', 'LineWidth', 1.5);
+hold(hAxes3, 'on');
+plot(hAxes4, lap.results.sRun, plotaRoll, 'Color', '#f2b248', 'LineWidth', 1.5);
+hold(hAxes4, 'on');
+grid(hAxes3, 'on');
+grid(hAxes4, 'on');
+xlabel(hAxes3, 'Distance (m)');
+xlabel(hAxes4, 'Distance (m)');
+ylabel(hAxes3, 'LLTD (%)');
+ylabel(hAxes4, 'Roll Angle (deg)');
+
 end
 
 % Documentation tab
@@ -301,9 +321,10 @@ uitextarea(tab4, ...
         '';
         ' GUI Version: 4.0 - 23/04/2026';
         '';
-        ' HOW TO USE:';
+        ' HOW TO USE (MAKE SURE IT IS IN FULL SCREEN):';
         '';
-        '- Set vehicle, tyre and track parameters in the units specified';
+        '- Screen is scrollable';
+        '- Set vehicle, tyre (both front and rear) and track parameters in the units specified';
         '- If the parameters are a list, ensure that these are separated';
         '  by spaces and spaces ONLY';
         '- Press START to run the simulation';
@@ -312,6 +333,7 @@ uitextarea(tab4, ...
         '  that relevant data has been noted before using RESET function';
         '';
         ' OUTPUT TABS';
+        '';
         '- Lap Time tab: speed, longitudinal and lateral g in that order';
         '- Tyre Friction tab: dynamic friction front and rear';
         '- Documentation tab: Where you are right now';
@@ -322,8 +344,17 @@ uitextarea(tab4, ...
         '   Victor Pardo Larrosa';
         '   Tom Stevens';
         '   Trin Tancharoen';
-        '   Juan Pablo Villalpando Saiz'
-        '   Adit Wicaksana'
+        '   Juan Pablo Villalpando Saiz';
+        '   Adit Wicaksana';
+        '';
+        '';
+        '';
+        '';
+        '';
+        '';
+        '';
+        '';
+        'If you ain´t first, you´re last (Ricky Bobby)'; 
     }, ...
     'Position', [10, 10, 460, 580], ...
     'Editable', 'off', ...
