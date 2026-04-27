@@ -368,8 +368,8 @@ classdef Vehicle < handle
             tRun = this.calculate_tRun(state.results.sRun, state.results.vCar);
             [FLiftF, FLiftR, FDrag] = this.calculateAeroLoads(state.results.vCar);
             [FzFront, FzRear] = this.calculateAxleLoads(state.results.vCar, state.results.gLong);
-            FxTyreRear = this.mCarTotal .* state.results.gLong;
-            MMotor = this.calculate_MMotorFromFxTyreRear(FxTyreRear);
+            FxTyreRearTraction = this.mCarTotal .* state.results.gLong + FDrag;
+            MMotor = this.calculate_MMotorFromFxTyreRear(FxTyreRearTraction);
 
             % Motor only supplies power in traction, no regen considered.
             MMotor(MMotor < 0) = 0;
