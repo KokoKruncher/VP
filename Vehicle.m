@@ -419,7 +419,8 @@ classdef Vehicle < handle
 
             % FzFront = FzFront - FzFrontNegative;
             FzRear = FzRear + FzFrontNegative;
-            gLongTractionLimited = FzRear .* muDynamicRear ./ this.mCarTotal;
+            [~, ~, FDrag] = this.calculateAeroLoads(vCar);
+            gLongTractionLimited = (FzRear .* muDynamicRear - FDrag) ./ this.mCarTotal;
         end
 
 

@@ -13,7 +13,7 @@ L                   = 3020;   % Wheelbase [mm]
 trackWidth          = 1500;   % Track width [mm]
 h_cog               = 300;    % Centre of gravity height [mm]
 LLTD                = 0.5;    % Lateral load transfer distribution
-D_aero              = 0.43;   % Aerodynamic balance - Front-to-Rear [-] 
+D_aero              = 0.43;   % Aerodynamic balance - Front-to-Rear [-]
 CdA                 = 0.50;   % Aerodynamic drag factor [kg/m]
 ClA                 = 0.70;   % Aerodynamic downforce factor [kg/m]
 FDR                 = 9.40;   % Final drive ratio [-]
@@ -31,9 +31,9 @@ mu_lon              = 1.30;   % Tyre friction coefficient [-], Braking & Acceler
 mu_lat              = 1.36;   % Tyre friction coefficient [-], Cornering
 
 % Circuit properties: 
-% Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
-% Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
-% Length_straight     = [742 405 368 53];     % Length of each straight [m]
+Radius_corner       = [50 15 35 70];        % Radius of each corner [m]
+Angle_corner        = [90 151 38 81];       % Angle of each corner [deg]
+Length_straight     = [742 405 368 53];     % Length of each straight [m]
 
 % Accel too short
 % Radius_corner       = [50 15 35 140];        % Radius of each corner [m]
@@ -46,9 +46,9 @@ mu_lat              = 1.36;   % Tyre friction coefficient [-], Cornering
 % Length_straight     = [742 20 368 53];     % Length of each straight [m]
 
 % Brake too short more than once
-Radius_corner       = [100 15 35 200];        % Radius of each corner [m]
-Angle_corner        = [45 151 38 40];       % Angle of each corner [deg]
-Length_straight     = [5 20 368 53];     % Length of each straight [m]
+% Radius_corner       = [100 15 35 200];        % Radius of each corner [m]
+% Angle_corner        = [45 151 38 40];       % Angle of each corner [deg]
+% Length_straight     = [5 20 368 53];     % Length of each straight [m]
 
 %Simulation parameters
 Delta_S             = 0.1;   % Calculation step size interval [m]
@@ -96,7 +96,44 @@ fprintf("%2i: %3.2f kph\n", [(1:numel(cornerSpeeds_kph)).', cornerSpeeds_kph].')
 %% Plot results
 plotResults(lap);
 
+%% Plot tire friction
+% figure('Name', 'Tire Friction Plot');
+% plot(lap.results.sRun, lap.results.muDynamicF, 'Color', '#f2b248', 'LineWidth', 1.5, 'DisplayName', 'Front');
+% hold on;
+% plot(lap.results.sRun, lap.results.muDynamicR, 'Color', '#7c4081', 'LineWidth', 1.5, 'DisplayName', 'Rear');
+% grid on;
+% xlabel('Distance (m)')
+% ylabel('Friction coefficient');
+% title('Dynamic tire friction');
+% legend();
+
+%% Debug
+vCarBraking = lap.results.vCar(lap.results.gLong < 0);
+gLongBraking = lap.results.gLong(lap.results.gLong < 0);
+
+vCarBrakingTheo = min(vCarBraking) : 0.1 : max(vCarBraking);
+gLongBrakingTheo = calcTractionLimitedBraking(vehicle, vCarBrakingTheo);
+
+figure();
+hold on
+plot(vCarBrakingTheo, gLongBrakingTheo, "--")
+scatter(vCarBraking, gLongBraking);
+grid on
+hold off
+xlabel("vCar (m/s)")
+ylabel("gLong (m/s^2)")
+
 %% Functions
+function gLong = calcTractionLimitedBraking(vehicle, vCar)
+downforce = vehicle.aeroDownforceFactor .* vCar.^2;
+drag = vehicle.aeroDragFactor .* vCar.^2;
+
+FzTotal = vehicle.mCarTotal .* 9.81 + downforce;
+mu = vehicle.tire.muTyreLong_peak;
+FxTotal = -(mu .* FzTotal) - drag;
+gLong = FxTotal ./ vehicle.mCarTotal;
+end
+
 
 function varargout = plotResults(lap)
 arguments
@@ -127,13 +164,3 @@ if nargout > 1
 end
 end
 
-%% Plot tire friction
-% figure('Name', 'Tire Friction Plot');
-% plot(lap.results.sRun, lap.results.muDynamicF, 'Color', '#f2b248', 'LineWidth', 1.5, 'DisplayName', 'Front');
-% hold on;
-% plot(lap.results.sRun, lap.results.muDynamicR, 'Color', '#7c4081', 'LineWidth', 1.5, 'DisplayName', 'Rear');
-% grid on;
-% xlabel('Distance (m)')
-% ylabel('Friction coefficient');
-% title('Dynamic tire friction');
-% legend();
