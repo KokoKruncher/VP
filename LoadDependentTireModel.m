@@ -2,7 +2,7 @@ classdef LoadDependentTireModel < handle
 
     % Tyre model
     properties
-        tyreDecayCoeff          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
+        tyreDecayCoeff          double {mustBeScalarOrEmpty, mustBeFinite, mustBeNonnegative}
         TyreWidthFront          double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         TyreWidthRear           double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
         radiusTyreRollingRear   double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}
@@ -27,6 +27,9 @@ classdef LoadDependentTireModel < handle
 
             LPUA = Fz./(TyreWidth.*this.radiusTyreRollingRear.*pi);
             muDynamic = mu_peak - (this.tyreDecayCoeff.*mu_peak.*LPUA);
+            
+           % Minimum mu is zero
+           muDynamic(muDynamic < 0) = 0;
         end
     end
 
