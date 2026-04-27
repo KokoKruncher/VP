@@ -18,11 +18,11 @@ Window = uifigure('Name', 'Lap Time Simulator', 'NumberTitle', 'off', 'Position'
 
 uilabel(Window, 'text', 'Vehicle Parameters', 'Position', [10 780 200 25], 'FontSize', 15, 'FontWeight', 'bold', 'BackgroundColor', [0.94 0.94 0.94], 'FontColor', 'black');
 
-vehicle_data = {'Vehicle Mass', 'Weight Dist Front', 'Wheelbase', 'Track Width', 'CG Height', 'Aero Balance front', 'Aero Drag Factor', 'Aero Downforce factor', 'Final drive ratio', 'Gear Ratio', 'Final driveline efficiency', 'Motor RPM', 'Motor Torque'};
+vehicle_data = {'Vehicle Mass', 'Weight Dist Front', 'Wheelbase', 'Track Width', 'CG Height', 'LLTD', 'Aero Balance front', 'Aero Drag Factor', 'Aero Downforce factor', 'Final drive ratio', 'Gear Ratio', 'Final driveline efficiency', 'Motor RPM', 'Motor Torque'};
 
-default_values = {'810', '0.45', '3020', '1500', '300', '0.43', '0.50', '0.70', '9.40', '1.00', '0.88', '0 2000 4000 6000 8000 10000 12000 14000 16000 18000', '360 360 360 360 270 216 180 154 135 120'};
+default_values = {'810', '0.45', '3020', '1500', '300', '0.5','0.43', '0.50', '0.70', '9.40', '1.00', '0.88', '0 2000 4000 6000 8000 10000 12000 14000 16000 18000', '360 360 360 360 270 216 180 154 135 120'};
 
-value_units = {'kg', 'fraction', 'mm', 'mm', 'mm', 'Fraction', 'Kg/m', 'Kg/m', 'Ratio', 'Ratio', 'Fraction', 'RPM', 'Nm'};
+value_units = {'kg', 'fraction', 'mm', 'mm', 'mm', 'Fraction', 'Fraction', 'Kg/m', 'Kg/m', 'Ratio', 'Ratio', 'Fraction', 'RPM', 'Nm'};
 
 n = length(vehicle_data);
 input_box = gobjects(n, 1);
@@ -146,14 +146,15 @@ function calculate(~,~, input_box, track_input_box, tyre_input_box, Delta_S, hAx
     vehicle.wheelbase               = param_input(3) ./ 1000;
     vehicle.trackWidth              = param_input(4) ./ 1000;
     vehicle.hCoG                    = param_input(5) ./ 1000;
-    vehicle.rAeroBalF               = param_input(6);
-    vehicle.aeroDragFactor          = param_input(7);
-    vehicle.aeroDownforceFactor     = param_input(8);
-    vehicle.rFinalDrive             = param_input(9);
-    vehicle.rTransmissionRatio      = param_input(10);
-    vehicle.eTransmission           = param_input(11);
-    vehicle.nMotorMapLookup         = powertrain_input(12) .* 2 .* pi ./ 60; % rpm to rad/s
-    vehicle.MMotorMapLookup         = powertrain_input(13);
+    vehicle.rMechBalF               = param_input(6);
+    vehicle.rAeroBalF               = param_input(7);
+    vehicle.aeroDragFactor          = param_input(8);
+    vehicle.aeroDownforceFactor     = param_input(9);
+    vehicle.rFinalDrive             = param_input(10);
+    vehicle.rTransmissionRatio      = param_input(11);
+    vehicle.eTransmission           = param_input(12);
+    vehicle.nMotorMapLookup         = powertrain_input(13) .* 2 .* pi ./ 60; % rpm to rad/s
+    vehicle.MMotorMapLookup         = powertrain_input(14);
     vehicle.tire = tire;
 
     %% Tyre param
