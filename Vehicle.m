@@ -1,4 +1,4 @@
-classdef Vehicle < handle
+classdef Vehicle < handle & isConvertibleToStruct
     % A vehicle that can perform simple steady-state manouvres.
     properties
         mCarTotal               double {mustBeScalarOrEmpty, mustBeFinite, mustBePositive}

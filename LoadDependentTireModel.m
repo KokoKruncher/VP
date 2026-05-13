@@ -1,4 +1,4 @@
-classdef LoadDependentTireModel < handle
+classdef LoadDependentTireModel < handle & isConvertibleToStruct
 
     % Tyre model
     properties
