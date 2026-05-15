@@ -34,7 +34,7 @@ sweepNameToPrettyName("CoGHeight") = "CoG Height";
 
 % plotAllSweeps(Sweeps);
 plotAllAbsoluteSensitivities(Sweeps, sweepNameToPrettyName);
-plotIndividualSweep(Sweeps, sweepNameToPrettyName);
+hFigIndividual = plotIndividualSweep(Sweeps, sweepNameToPrettyName);
 
 %% Functions
 function vCarCorner = extractCornerSpeeds(lap)
@@ -141,64 +141,92 @@ end
 sweepNames = sweepNames(sortOrder);
 hFig = figure(Name="All Sensitivities", NumberTitle="off");
 hAxes = axes(hFig);
-bar(hAxes, sweepNameToPrettyName(sweepNames), abs(sensitivities) * 1000);
+hBar = bar(hAxes, sweepNameToPrettyName(sweepNames), abs(sensitivities) * 1000);
+hBar.Labels = round(hBar.YData, 1);
 ylabel(hAxes, "Sensitivity (ms/%)")
 title(hAxes, "Absolute laptime sensitivity (non-directional)")
+box(hAxes, "off");
+hAxes.XAxis.TickLength = [0, 0];
+fontsize(hFig, 16, "points");
+hFig.Units = "normalized";
+hFig.OuterPosition = [0.25 0.25 0.5 0.5];
 end
 
 
-function plotIndividualSweep(Sweeps, sweepNameToPrettyName)
+function hFig = plotIndividualSweep(Sweeps, sweepNameToPrettyName)
 arguments
     Sweeps (1,1) struct
     sweepNameToPrettyName dictionary
 end
-hFig = figure(Name="Individual Sweeps", NumberTitle="off");
-hTabGroup = uitabgroup(hFig);
 sweepNames = convertCharsToStrings(fieldnames(Sweeps));
+iFig = 0;
 for thisSweepName = sweepNames(:).'
+    
     prettyName = sweepNameToPrettyName(thisSweepName);
     ThisSweep = Sweeps.(thisSweepName);
     sensitivity_ms_per_percent = ThisSweep.Results.Sensitivity * 1000;
 
-    hTab = uitab(hTabGroup, Title=sprintf("%s Sweep", prettyName));
-    hTiles = tiledlayout(hTab, "flow");
-
     % Laptime delta
-    hAxes = nexttile(hTiles);
+    iFig = iFig + 1;
+    hFig(iFig) = figure(Name=sprintf("%s Sweep - Laptime delta", thisSweepName), NumberTitle="off");
+    hAxes = axes(hFig(iFig));
     plot(hAxes, ThisSweep.Results.PercentDelta, ThisSweep.Results.LaptimeDelta, "-o");
     xlabel(hAxes, "Change from baseline (%)");
     ylabel(hAxes, "Laptime delta (s)");
     grid(hAxes, "on");
     title(hAxes, "Laptime deltas from baseline");
+    box(hAxes, "off");
+    sensitivityString = sprintf("%s Sensitivity: %.0f ms/%%", prettyName, sensitivity_ms_per_percent);
+    BaselineParameters = getBaselineParameters(ThisSweep);
+    baselineParameterNames = convertCharsToStrings(fieldnames(BaselineParameters));
+    baselineParameterCount = numel(baselineParameterNames);
+    baselineParameterStrings = string.empty();
+    for iParameter = baselineParameterCount:-1:1
+        thisParameterName = baselineParameterNames(iParameter);
+        thisParameterValue = BaselineParameters.(thisParameterName);
+        baselineParameterStrings(iParameter,1) = sprintf("Baseline %s: %.2f", thisParameterName, thisParameterValue);
+    end
+    titleString = join([sensitivityString; baselineParameterStrings], newline);
+    hTitle = title(hAxes, titleString);
+    hTitle.Interpreter = "none";
 
     % Corner speeds
     runCount = numel(ThisSweep.Runs);
     runIndices = downsample(1:runCount, 4);
     plottedRunCount = numel(runIndices);
     percentDelta = [ThisSweep.Runs(runIndices).PercentDelta];
+    vCarCornerBaseline = extractCornerSpeeds(ThisSweep.Runs([ThisSweep.Runs.PercentDelta] == 0).Lap);
+    vCarCornerBaseline = reshape(vCarCornerBaseline, 1, []);
     vCarCorner = cell(plottedRunCount, 1);
     for iRun = runIndices(:).'
         lap = ThisSweep.Runs(iRun).Lap;
         vCarCorner{iRun} = reshape(extractCornerSpeeds(lap), 1, []);
     end
     vCarCorner = vertcat(vCarCorner{:});
+    vCarCornerDelta = vCarCorner - vCarCornerBaseline;
     cornerCount = width(vCarCorner);
-    hAxes = nexttile(hTiles);
-    hBar = bar("T" + (1:cornerCount), vCarCorner .* 3.6, FaceColor="flat");
+    iFig = iFig + 1;
+    hFig(iFig) = figure(Name=sprintf("%s Sweep - Corner speed deltas", thisSweepName), NumberTitle="off");
+    hAxes = axes(hFig(iFig));
+    hBar = bar("T" + (1:cornerCount), vCarCornerDelta .* 3.6, FaceColor="flat");
     colourMap = brewermap(plottedRunCount, "Reds");
     for iBar = 1:plottedRunCount
         hBar(iBar).CData = repmat(colourMap(iBar,:), cornerCount, 1);
     end
     xlabel(hAxes, "Corner")
-    ylabel(hAxes, "Corner speed (kph)");
+    ylabel(hAxes, "Corner speed delta from baseline (kph)");
     legendLabels = arrayfun(@(x) sprintf("%+i%%", x), percentDelta);
     hLegend = legend(hAxes, legendLabels, Location="eastoutside");
     hLegend.Title.String = "Change from baseline";
-    title(hAxes, "Corner speeds");
+    title(hAxes, "Corner speed deltas");
     grid(hAxes, "on");
+    box(hAxes, "off");
+    hAxes.XAxis.TickLength = [0, 0];
 
     % Accel profile
-    hAxes = nexttile(hTiles);
+    iFig = iFig + 1;
+    hFig(iFig) = figure(Name=sprintf("%s Sweep - Accel profile", thisSweepName), NumberTitle="off");
+    hAxes = axes(hFig(iFig));
     hold(hAxes, "on");
     hAxes.ColorOrder = colourMap;
     for iRun = runIndices(:).'
@@ -215,9 +243,12 @@ for thisSweepName = sweepNames(:).'
     hLegend.Title.String = "Change from baseline";
     title(hAxes, "Acceleration Profile");
     grid(hAxes, "on");
+    box(hAxes, "off");
 
     % Braking profile
-    hAxes = nexttile(hTiles);
+    iFig = iFig + 1;
+    hFig(iFig) = figure(Name=sprintf("%s Sweep - Braking profile delta", thisSweepName), NumberTitle="off");
+    hAxes = axes(hFig(iFig));
     hold(hAxes, "on");
     hAxes.ColorOrder = colourMap;
     for iRun = runIndices(:).'
@@ -234,20 +265,11 @@ for thisSweepName = sweepNames(:).'
     hLegend.Title.String = "Change from baseline";
     title(hAxes, "Braking Profile");
     grid(hAxes, "on");
-    
-    % Titles
-    sensitivityString = sprintf("%s Sensitivity: %.0f ms/%%", prettyName, sensitivity_ms_per_percent);
-    BaselineParameters = getBaselineParameters(ThisSweep);
-    baselineParameterNames = convertCharsToStrings(fieldnames(BaselineParameters));
-    baselineParameterCount = numel(baselineParameterNames);
-    for iParameter = baselineParameterCount:-1:1
-        thisParameterName = baselineParameterNames(iParameter);
-        thisParameterValue = BaselineParameters.(thisParameterName);
-        baselineParameterStrings(iParameter,1) = sprintf("Baseline %s: %.2f", thisParameterName, thisParameterValue);
-    end
-    titleString = join([sensitivityString; baselineParameterStrings], newline);
-    hTitle = sgtitle(hTiles, titleString);
-    hTitle.Interpreter = "none";
+    box(hAxes, "off");
 end
 fontsize(hFig, 16, "points");
+for ii = 1:numel(hFig)
+    hFig(ii).Units = "normalized";
+    hFig(ii).OuterPosition = [0.25 0.25 0.5 0.5];
+end
 end
