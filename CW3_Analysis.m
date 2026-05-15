@@ -33,7 +33,7 @@ sweepNameToPrettyName("AeroLoads") = "Drag & Downforce";
 sweepNameToPrettyName("CoGHeight") = "CoG Height";
 
 % plotAllSweeps(Sweeps);
-% plotAllAbsoluteSensitivities(Sweeps, sweepNameToPrettyName);
+plotAllAbsoluteSensitivities(Sweeps, sweepNameToPrettyName);
 plotIndividualSweep(Sweeps, sweepNameToPrettyName);
 
 %% Functions

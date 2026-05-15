@@ -18,7 +18,7 @@ if isa(hObj, "matlab.ui.container.Tab")
 else
     name = hObj.Name;
 end
-name = name + ".eps";
+name = name + ".png";
 
 if ~isempty(args.NamePrefix)
     name = args.NamePrefix + " - " + name;
